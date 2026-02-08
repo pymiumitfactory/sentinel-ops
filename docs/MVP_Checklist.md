@@ -17,6 +17,7 @@ Este documento rastrea el progreso técnico para cumplir con el alcance definido
 ## 🟡 3. Mobile Checklist (PWA para Operarios)
 - [x] **Interfaz de Formulario**: Pantalla de ingreso de horómetro y checks básicos. *(Implementado)*
 - [x] **Captura de Evidencia**: Implementar input de cámara/fotos en `ChecklistForm`.
+- [ ] **Subida de Fotos**: Configurar Bucket en Supabase y subir archivos reales. *(MANDATORIO)*
 - [x] **Persistencia Offline (Dexie.js)**: Guardar reportes en IndexedDB cuando no hay señal.
 - [x] **Sincronización Background**: Service Worker que envíe los datos al recuperar conexión.
 - [x] **Manifiesto PWA**: Configurar iconos y `manifest.json` para que sea instalable.

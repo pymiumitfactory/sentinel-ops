@@ -4,8 +4,10 @@ import type { Asset, Alert } from './types';
 import { ChecklistForm } from './components/ChecklistForm';
 import { AssetHistory } from './components/AssetHistory';
 import { TrendChart } from './components/TrendChart';
+import { useToast } from './components/Toast';
 import './styles/main.css';
 import './styles/responsive.css';
+import './styles/animations.css';
 
 const App: React.FC = () => {
     const [assets, setAssets] = useState<Asset[]>([]);
@@ -17,6 +19,7 @@ const App: React.FC = () => {
     const [pendingCount, setPendingCount] = useState(0);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const isSyncing = useRef(false);
+    const { showToast } = useToast();
 
     const fetchData = async () => {
         try {
@@ -53,7 +56,12 @@ const App: React.FC = () => {
 
         try {
             if (navigator.onLine) {
-                await api.syncPendingLogs();
+                try {
+                    const synced = await api.syncPendingLogs();
+                    if (synced > 0) showToast(`Sincronizados ${synced} reportes offline`, 'success');
+                } catch (e) {
+                    console.error(e);
+                }
             }
             const count = await api.getPendingLogsCount();
             setPendingCount(count);
