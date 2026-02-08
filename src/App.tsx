@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from './api/service';
 import type { Asset, Alert } from './types';
-import { ChecklistForm } from './components/ChecklistForm';
-import { AssetHistory } from './components/AssetHistory';
 import { useToast } from './components/Toast';
 import { AssetForm } from './components/AssetForm';
 import { NotificationCenter } from './components/NotificationCenter';
@@ -26,11 +24,6 @@ const App: React.FC = () => {
     const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-
-    // Legacy Modals (Triggered from Drawer)
-    const [checklistAsset, setChecklistAsset] = useState<Asset | null>(null);
-    const [historyAsset, setHistoryAsset] = useState<Asset | null>(null);
-    const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [isCreatingAsset, setIsCreatingAsset] = useState(false);
 
     // Sync State
@@ -39,7 +32,7 @@ const App: React.FC = () => {
     const isSyncing = useRef(false);
     const { showToast } = useToast();
 
-    // -- Data Fetching Logic (Same as before) --
+    // -- Data Fetching Logic --
     const fetchData = async () => {
         const cachedAssets = localStorage.getItem('cached_assets');
         const cachedAlerts = localStorage.getItem('cached_alerts');
@@ -99,7 +92,6 @@ const App: React.FC = () => {
 
     // -- Action Handlers --
     const handleResolveAlert = async (id: string) => {
-        // Mock resolve for MVP
         const newAlerts = alerts.map(a => a.id === id ? { ...a, isResolved: true } : a);
         setAlerts(newAlerts);
         localStorage.setItem('cached_alerts', JSON.stringify(newAlerts));
@@ -108,22 +100,23 @@ const App: React.FC = () => {
 
     const handleSaveAsset = async (data: Partial<Asset>) => {
         try {
-            if (editingAsset) {
-                await api.updateAsset(editingAsset.id, data);
+            if (data.id) {
+                // Update existing
+                await api.updateAsset(data.id, data);
                 showToast('Activo actualizado', 'success');
             } else {
+                // Create new
                 // @ts-ignore
                 await api.createAsset(data);
                 showToast('Activo creado', 'success');
             }
             fetchData();
             setIsCreatingAsset(false);
-            setEditingAsset(null);
-            setDrawerAsset(null); // Close drawer if open
         } catch (e) {
             console.error(e);
             showToast('Error al guardar', 'error');
         }
+        await fetchData(); // Ensure refresh
     };
 
     const handleDeleteAsset = async (id: string) => {
@@ -131,7 +124,6 @@ const App: React.FC = () => {
             await api.deleteAsset(id);
             showToast('Activo eliminado', 'success');
             fetchData();
-            setEditingAsset(null);
             setDrawerAsset(null);
         } catch (e) { console.error(e); showToast('Error al eliminar', 'error'); }
     };
@@ -191,7 +183,7 @@ const App: React.FC = () => {
             </header>
 
             {/* -- Main Feed -- */}
-            <main style={{ paddingBottom: '80px' }}> {/* Space for FAB */}
+            <main style={{ paddingBottom: '80px' }}>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>Flota Activa</h2>
@@ -214,7 +206,7 @@ const App: React.FC = () => {
                                         <h3 style={{ margin: 0, fontSize: '1rem' }}>{asset.name}</h3>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                                             <LocationIcon size={12} />
-                                            <span>{asset.location}</span>
+                                            <span>{asset.location || 'Sin ubicación'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -241,7 +233,6 @@ const App: React.FC = () => {
                 isOpen={isScannerOpen}
                 onClose={() => setIsScannerOpen(false)}
                 onScan={(id) => {
-                    // Try to match by ID or Internal ID
                     const found = assets.find(a => a.id === id || a.internalId === id);
                     if (found) {
                         setDrawerAsset(found);
@@ -261,36 +252,21 @@ const App: React.FC = () => {
                 onResolve={handleResolveAlert}
             />
 
+            {/* Asset Drawer (Main Interaction Point) */}
             <AssetDrawer
                 asset={drawerAsset}
                 onClose={() => setDrawerAsset(null)}
-                onChecklist={(a) => { setDrawerAsset(null); setChecklistAsset(a); }}
-                onHistory={(a) => { setDrawerAsset(null); setHistoryAsset(a); }}
-                onEdit={(a) => { setDrawerAsset(null); setEditingAsset(a); }}
+                // Provide handlers for internal navigation
+                onRefreshRequest={fetchData}
+                onAssetUpdate={async (id, data) => handleSaveAsset({ ...data, id })}
+                onAssetDelete={handleDeleteAsset}
             />
 
-            {/* Sub-Modals (Triggered from Drawer) */}
-            {checklistAsset && (
-                <ChecklistForm
-                    asset={checklistAsset}
-                    onClose={() => setChecklistAsset(null)}
-                    onSuccess={() => { showToast('Checklist guardado', 'success'); fetchData(); }}
-                />
-            )}
-
-            {historyAsset && (
-                <AssetHistory
-                    asset={historyAsset}
-                    onClose={() => setHistoryAsset(null)}
-                />
-            )}
-
-            {(isCreatingAsset || editingAsset) && (
+            {/* Creating Modal (Only for NEW assets) */}
+            {isCreatingAsset && (
                 <AssetForm
-                    asset={editingAsset || undefined}
-                    onClose={() => { setIsCreatingAsset(false); setEditingAsset(null); }}
+                    onClose={() => setIsCreatingAsset(false)}
                     onSave={handleSaveAsset}
-                    onDelete={editingAsset ? handleDeleteAsset : undefined}
                 />
             )}
         </div>
