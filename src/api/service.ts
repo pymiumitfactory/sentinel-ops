@@ -20,6 +20,7 @@ export interface SentinelDataService {
     signIn(email: string, password: string): Promise<{ user: any, error: any }>;
     signOut(): Promise<void>;
     getCurrentUser(): Promise<any>;
+    getTeamMembers(): Promise<any[]>;
 }
 
 // Supabase Implementation
@@ -414,6 +415,17 @@ class SupabaseSentinelService implements SentinelDataService {
     async getCurrentUser() {
         const { data: { user } } = await supabase.auth.getUser();
         return user;
+    }
+
+    async getTeamMembers() {
+        // RLS will ensure we only see our team
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('full_name', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
     }
 
     // -- Private Helper for Multi-tenancy --

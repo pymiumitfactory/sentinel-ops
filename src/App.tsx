@@ -10,6 +10,9 @@ import {
     PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon, ScanIcon
 } from './components/Icons';
 import { Login } from './components/Login';
+import { TeamManager } from './components/TeamManager';
+import { DashboardStats } from './components/DashboardStats';
+import { FleetMap } from './components/FleetMap';
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
@@ -25,6 +28,8 @@ const App: React.FC = () => {
     // UI State
     const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [isTeamOpen, setIsTeamOpen] = useState(false);
+    const [isMapOpen, setIsMapOpen] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isCreatingAsset, setIsCreatingAsset] = useState(false);
 
@@ -172,6 +177,19 @@ const App: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                     <button
+                        onClick={() => setIsTeamOpen(true)}
+                        style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', marginRight: '0.5rem' }}
+                    >
+                        Equipo
+                    </button>
+                    <button
+                        onClick={() => setIsMapOpen(!isMapOpen)}
+                        style={{ background: isMapOpen ? 'rgba(56, 139, 253, 0.2)' : 'transparent', border: '1px solid var(--border-color)', color: isMapOpen ? '#58a6ff' : 'var(--text-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', marginRight: '0.5rem' }}
+                    >
+                        {isMapOpen ? 'Mapa' : 'Mapa'}
+                    </button>
+
+                    <button
                         onClick={handleLogout}
                         style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', marginRight: '0.5rem' }}
                     >
@@ -180,16 +198,11 @@ const App: React.FC = () => {
                     {/* Offline Indicator */}
                     {(pendingCount > 0 || !isOnline) && (
                         <span
-                            onClick={runSync}
-                            style={{
-                                fontSize: '0.7rem',
-                                color: !isOnline ? 'var(--text-secondary)' : 'var(--safety-orange)',
-                                border: '1px solid currentColor',
-                                padding: '2px 6px',
-                                borderRadius: '12px'
-                            }}
+                            className={`sync-badge ${isSyncing.current ? 'syncing' : ''}`}
+                            onClick={() => !isOnline && showToast(`${pendingCount} cambios pendientes`, 'info')}
                         >
-                            {!isOnline ? 'OFFLINE' : `SYNC ${pendingCount}`}
+                            {isOnline ? (isSyncing.current ? 'Sincronizando...' : 'En Linea') : 'Sin Conexión'}
+                            {pendingCount > 0 && ` (${pendingCount})`}
                         </span>
                     )}
 
@@ -220,6 +233,14 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </header>
+
+            <DashboardStats assets={assets} alerts={alerts} />
+
+            {isMapOpen && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <FleetMap assets={assets} />
+                </div>
+            )}
 
             {/* -- Main Feed -- */}
             <main style={{ paddingBottom: '80px' }}>
@@ -290,6 +311,8 @@ const App: React.FC = () => {
                 assets={assets}
                 onResolve={handleResolveAlert}
             />
+
+            {isTeamOpen && <TeamManager onClose={() => setIsTeamOpen(false)} />}
 
             {/* Asset Drawer (Main Interaction Point) */}
             <AssetDrawer
