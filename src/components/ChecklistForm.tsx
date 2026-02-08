@@ -78,7 +78,8 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
                 type: 'checklist',
                 data: checklistData, // Store complete data JSON
                 // Also pass location string if API supports it specifically
-                location: location ? `${location.lat}, ${location.lng}` : undefined
+                location: location ? `${location.lat}, ${location.lng}` : undefined,
+                photoFile: photo || undefined
             });
 
             // Update asset hours if provided

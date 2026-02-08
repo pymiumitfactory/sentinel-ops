@@ -15,7 +15,8 @@ export interface SentinelDataService {
     seedData(): Promise<void>;
     syncPendingLogs(): Promise<number>;
     getPendingLogsCount(): Promise<number>;
-    createLog(payload: { assetId: string, type: string, data: any, location?: string }): Promise<void>;
+    createLog(payload: { assetId: string, type: string, data: any, location?: string, photoFile?: File }): Promise<void>;
+    uploadPhoto(file: File, folder: string): Promise<string | null>;
 }
 
 // Supabase Implementation
@@ -320,7 +321,36 @@ class SupabaseSentinelService implements SentinelDataService {
         return syncedCount;
     }
 
-    async createLog(payload: { assetId: string, type: string, data: any, location?: string }): Promise<void> {
+    async uploadPhoto(file: File, folder: string): Promise<string | null> {
+        try {
+            const fileName = `${folder}/${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_')}`;
+            const { data, error } = await supabase.storage
+                .from('checklist-photos')
+                .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('checklist-photos')
+                .getPublicUrl(fileName);
+
+            return publicUrl;
+        } catch (error) {
+            console.error('Error uploading photo:', error);
+            // In a real offline scenario, we would store the file in IndexedDB here
+            return null;
+        }
+    }
+
+    async createLog(payload: { assetId: string, type: string, data: any, location?: string, photoFile?: File }): Promise<void> {
+        console.log('Creating log...', payload);
+
+        let photoUrl = null;
+        // 1. Try to upload photo if present
+        if (payload.photoFile) {
+            photoUrl = await this.uploadPhoto(payload.photoFile, payload.assetId);
+        }
+
         // Adapt ChecklistForm payload to MaintenanceLog structure
         // Extract hours reading if available in data items
         const hoursReading = payload.data?.items?.horometer
@@ -341,6 +371,7 @@ class SupabaseSentinelService implements SentinelDataService {
             operatorId: undefined, // Add auth later
             hoursReading: hoursReading,
             answers: payload.data, // Store full JSON data
+            photoUrl: photoUrl || undefined, // Add the uploaded URL
             gpsLocation: gpsLocation
         };
 
