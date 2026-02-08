@@ -15,4 +15,5 @@ export interface OfflineLog {
     gpsLocation?: { lat: number, lng: number };
     createdAt: number; // Timestamp
     synced: boolean;
+    photoBlob?: Blob; // For offline storage
 }

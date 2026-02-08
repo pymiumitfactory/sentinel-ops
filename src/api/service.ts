@@ -278,44 +278,44 @@ class SupabaseSentinelService implements SentinelDataService {
     }
 
     async getPendingLogsCount(): Promise<number> {
-        return await db.logs.filter(log => !log.synced).count();
+        return await db.logs.where('synced').equals(0).count(); // Dexie boolean index issue, use 0/1 or iterate
     }
 
     async syncPendingLogs(): Promise<number> {
-        if (!navigator.onLine) {
-            console.log('Offline: Skipping sync');
-            return 0;
-        }
+        if (!navigator.onLine) return 0;
 
         const pendingLogs = await db.logs.filter(log => !log.synced).toArray();
         let syncedCount = 0;
 
         if (pendingLogs.length === 0) return 0;
-
-        console.log(`Intento de sincronización: ${pendingLogs.length} pendientes...`);
+        console.log(`Syncing ${pendingLogs.length} logs...`);
 
         for (const log of pendingLogs) {
             try {
-                // Submit to Supabase
-                await this.submitLog({
+                let photoUrl = null;
+                // Upload blob if exists
+                if (log.photoBlob) {
+                    // Convert blob back to File for uploadPhoto
+                    const file = new File([log.photoBlob], `offline_photo_${log.id}.jpg`, { type: log.photoBlob.type });
+                    photoUrl = await this.uploadPhoto(file, log.assetId);
+                }
+
+                const logEntry: Omit<MaintenanceLog, 'id' | 'createdAt'> = {
                     assetId: log.assetId,
-                    operatorId: log.operatorId,
+                    operatorId: undefined,
                     hoursReading: log.hoursReading,
                     answers: log.answers,
-                    gpsLocation: log.gpsLocation
-                });
+                    gpsLocation: log.gpsLocation,
+                    photoUrl: photoUrl || undefined
+                };
 
-                // Mark as synced
-                await db.logs.update(log.id, { synced: true });
+                await this.submitLog(logEntry);
+
+                // Remove from local DB after success
+                await db.logs.delete(log.id);
                 syncedCount++;
-                console.log(`Sync success: ${log.id}`);
-            } catch (error: any) {
+            } catch (error) {
                 console.error(`Failed to sync log ${log.id}`, error);
-
-                if (error?.code === '22P02' || error?.code === '23503' || error?.message?.includes('Invalid Asset ID')) {
-                    console.warn(`Deleting corrupted/incompatible log ${log.id} to unblock queue.`);
-                    await db.logs.delete(log.id);
-                }
             }
         }
         return syncedCount;
@@ -337,27 +337,18 @@ class SupabaseSentinelService implements SentinelDataService {
             return publicUrl;
         } catch (error) {
             console.error('Error uploading photo:', error);
-            // In a real offline scenario, we would store the file in IndexedDB here
             return null;
         }
     }
 
     async createLog(payload: { assetId: string, type: string, data: any, location?: string, photoFile?: File }): Promise<void> {
-        console.log('Creating log...', payload);
+        const isOffline = !navigator.onLine;
 
-        let photoUrl = null;
-        // 1. Try to upload photo if present
-        if (payload.photoFile) {
-            photoUrl = await this.uploadPhoto(payload.photoFile, payload.assetId);
-        }
-
-        // Adapt ChecklistForm payload to MaintenanceLog structure
-        // Extract hours reading if available in data items
+        // Extract basic data
         const hoursReading = payload.data?.items?.horometer
             ? Number(payload.data.items.horometer)
-            : 0; // Default or fetch current
+            : 0;
 
-        // Parse location string back to object if needed, or use payload.data.location
         let gpsLocation = undefined;
         if (payload.data?.location) {
             gpsLocation = payload.data.location;
@@ -366,16 +357,40 @@ class SupabaseSentinelService implements SentinelDataService {
             if (!isNaN(lat) && !isNaN(lng)) gpsLocation = { lat, lng };
         }
 
-        const logEntry: Omit<MaintenanceLog, 'id' | 'createdAt'> = {
-            assetId: payload.assetId,
-            operatorId: undefined, // Add auth later
-            hoursReading: hoursReading,
-            answers: payload.data, // Store full JSON data
-            photoUrl: photoUrl || undefined, // Add the uploaded URL
-            gpsLocation: gpsLocation
-        };
+        try {
+            if (isOffline) throw new Error('Offline Mode');
 
-        await this.submitLog(logEntry);
+            let photoUrl = null;
+            if (payload.photoFile) {
+                photoUrl = await this.uploadPhoto(payload.photoFile, payload.assetId);
+            }
+
+            const logEntry: Omit<MaintenanceLog, 'id' | 'createdAt'> = {
+                assetId: payload.assetId,
+                operatorId: undefined,
+                hoursReading: hoursReading,
+                answers: payload.data,
+                photoUrl: photoUrl || undefined, // Add the uploaded URL
+                gpsLocation: gpsLocation
+            };
+
+            await this.submitLog(logEntry);
+
+        } catch (error) {
+            console.warn('Network/Upload failed, saving locally:', error);
+
+            // Save to Dexie for later sync
+            await db.logs.add({
+                id: crypto.randomUUID(),
+                assetId: payload.assetId,
+                answers: payload.data, // Should match ChecklistAnswer[] roughly or fail gracefully
+                hoursReading: hoursReading,
+                gpsLocation: gpsLocation,
+                createdAt: Date.now(),
+                synced: false,
+                photoBlob: payload.photoFile // Store the FILE object (Blob compatible)
+            });
+        }
     }
 }
 
