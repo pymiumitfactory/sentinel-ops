@@ -387,45 +387,55 @@ class SupabaseSentinelService implements SentinelDataService {
         } catch (error) {
             console.warn('Network/Upload failed, saving locally:', error);
 
-        });
+            // Save to Dexie for later sync
+            await db.logs.add({
+                id: crypto.randomUUID(),
+                assetId: payload.assetId,
+                answers: payload.data, // Should match ChecklistAnswer[] roughly or fail gracefully
+                hoursReading: hoursReading,
+                gpsLocation: gpsLocation,
+                createdAt: Date.now(),
+                synced: false,
+                photoBlob: payload.photoFile // Store the FILE object (Blob compatible)
+            });
+        }
     }
-}
 
     // -- Auth Methods --
     async signIn(email: string, password: string) {
-    return await supabase.auth.signInWithPassword({ email, password });
-}
+        return await supabase.auth.signInWithPassword({ email, password });
+    }
 
     async signOut() {
-    return await supabase.auth.signOut();
-}
+        return await supabase.auth.signOut();
+    }
 
     async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
-}
+        const { data: { user } } = await supabase.auth.getUser();
+        return user;
+    }
 
     // -- Private Helper for Multi-tenancy --
     private async _getUserContext() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuario no autenticado');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuario no autenticado');
 
-    // 1. Try fetching from profiles (Source of Truth)
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('org_id')
-        .eq('id', user.id)
-        .single();
+        // 1. Try fetching from profiles (Source of Truth)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('org_id')
+            .eq('id', user.id)
+            .single();
 
-    // 2. Fallback to metadata or default (for development/legacy)
-    const orgId = profile?.org_id || user.user_metadata?.org_id;
+        // 2. Fallback to metadata or default (for development/legacy)
+        const orgId = profile?.org_id || user.user_metadata?.org_id;
 
-    if (!orgId) {
-        console.warn('Usuario sin organización asignada. Modo restringido.');
+        if (!orgId) {
+            console.warn('Usuario sin organización asignada. Modo restringido.');
+        }
+
+        return { user, orgId };
     }
-
-    return { user, orgId };
-}
 }
 
 export const api = new SupabaseSentinelService();
