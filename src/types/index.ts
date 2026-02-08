@@ -1,4 +1,4 @@
-export type AssetStatus = 'active' | 'warning' | 'down' | 'maintenance';
+export type AssetStatus = 'active' | 'warning' | 'down' | 'maintenance' | 'offline';
 export type AssetCategory = 'heavy_machinery' | 'irrigation_system' | 'transport';
 
 export interface AsyncTaskState {

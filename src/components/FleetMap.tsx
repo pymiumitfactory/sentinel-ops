@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { Asset } from '../types';
+import type { Asset } from '../types';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { LocationIcon } from './Icons';
+import { MapPinIcon as LocationIcon } from './Icons';
 
 // Fix for default Leaflet marker icons in React
 import icon from 'leaflet/dist/images/marker-icon.png';

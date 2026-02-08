@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Asset, Alert } from '../types';
+import type { Asset, Alert } from '../types';
 
 interface DashboardStatsProps {
     assets: Asset[];
@@ -19,7 +19,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ assets, alerts }
         const pMaint = total ? (maintenance / total) * 100 : 0;
 
         // Critical alerts count
-        const criticalAlerts = alerts.filter(a => a.severity === 'critical' && a.status === 'active').length;
+        const criticalAlerts = alerts.filter(a => a.severity === 'critical' && !a.isResolved).length;
 
         return { total, active, maintenance, offline, pActive, pMaint, criticalAlerts };
     }, [assets, alerts]);
