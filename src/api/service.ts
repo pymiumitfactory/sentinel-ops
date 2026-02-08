@@ -324,7 +324,7 @@ class SupabaseSentinelService implements SentinelDataService {
     async uploadPhoto(file: File, folder: string): Promise<string | null> {
         try {
             const fileName = `${folder}/${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_')}`;
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('checklist-photos')
                 .upload(fileName, file, { cacheControl: '3600', upsert: false });
 

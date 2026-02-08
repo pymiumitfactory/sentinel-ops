@@ -95,6 +95,26 @@ export const AssetHistory: React.FC<AssetHistoryProps> = ({ asset, onClose }) =>
                                         <div style={{ color: '#238636', fontSize: '0.9rem' }}>✅ Inspección sin novedades</div>
                                     )}
 
+                                    {/* Photo Evidence */}
+                                    {log.photoUrl && (
+                                        <div style={{ marginTop: '1rem', borderTop: '1px solid #30363d', paddingTop: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.8rem', color: '#8b949e', marginBottom: '0.4rem' }}>📷 Evidencia Fotográfica:</div>
+                                            <a href={log.photoUrl} target="_blank" rel="noopener noreferrer">
+                                                <img
+                                                    src={log.photoUrl}
+                                                    alt="Evidencia"
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '150px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #30363d'
+                                                    }}
+                                                />
+                                            </a>
+                                        </div>
+                                    )}
+
                                     {/* Raw Answers Expander (Optional, kept simple for MVP) */}
                                 </div>
                             );
