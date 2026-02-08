@@ -2,7 +2,7 @@ import React from 'react';
 import type { Asset } from '../types';
 import {
     ClockIcon, MapPinIcon, ClipboardCheckIcon, HistoryIcon,
-    EditIcon, XIcon, AlertTriangleIcon
+    EditIcon, XIcon
 } from './Icons';
 
 interface AssetDrawerProps {
@@ -41,7 +41,9 @@ export const AssetDrawer: React.FC<AssetDrawerProps> = ({
                         <span className="status-dot"></span>
                         {asset.status.toUpperCase()}
                     </span>
-                    <span className="category-tag">{asset.brand} {asset.model}</span>
+                    <span className="category-tag" style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>
+                        {asset.brand} {asset.model}
+                    </span>
                 </div>
 
                 <div className="drawer-actions">

@@ -3,13 +3,12 @@ import { api } from './api/service';
 import type { Asset, Alert } from './types';
 import { ChecklistForm } from './components/ChecklistForm';
 import { AssetHistory } from './components/AssetHistory';
-import { TrendChart } from './components/TrendChart';
 import { useToast } from './components/Toast';
 import { AssetForm } from './components/AssetForm';
 import { NotificationCenter } from './components/NotificationCenter';
 import { AssetDrawer } from './components/AssetDrawer';
 import {
-    ClockIcon, MapPinIcon, PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon
+    PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon
 } from './components/Icons';
 import './styles/main.css';
 import './styles/responsive.css';
