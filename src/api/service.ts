@@ -6,6 +6,7 @@ import type { Asset, Alert, MaintenanceLog } from '../types';
 export interface SentinelDataService {
     getAssets(): Promise<Asset[]>;
     getAssetById(id: string): Promise<Asset | undefined>;
+    getAssetLogs(assetId: string): Promise<MaintenanceLog[]>; // New method
     getAlerts(): Promise<Alert[]>;
     submitLog(log: Omit<MaintenanceLog, 'id' | 'createdAt'>): Promise<MaintenanceLog>;
     seedData(): Promise<void>;
@@ -16,17 +17,18 @@ export interface SentinelDataService {
 // Supabase Implementation
 class SupabaseSentinelService implements SentinelDataService {
 
+    // ... existing methods ...
     async getAssets(): Promise<Asset[]> {
         const { data, error } = await supabase
             .from('assets')
-            .select('*');
+            .select('*')
+            .order('name'); // Sort by name
 
         if (error) {
             console.error('Error fetching assets:', error);
             return [];
         }
 
-        // Map snake_case (DB) to camelCase (Frontend)
         return (data || []).map((row: any) => ({
             id: row.id,
             name: row.name,
@@ -41,6 +43,7 @@ class SupabaseSentinelService implements SentinelDataService {
         }));
     }
 
+    // ... getAssetById ...
     async getAssetById(id: string): Promise<Asset | undefined> {
         const { data, error } = await supabase
             .from('assets')
@@ -64,11 +67,36 @@ class SupabaseSentinelService implements SentinelDataService {
         };
     }
 
+    // New: Get logs for specific asset
+    async getAssetLogs(assetId: string): Promise<MaintenanceLog[]> {
+        const { data, error } = await supabase
+            .from('daily_logs')
+            .select('*')
+            .eq('asset_id', assetId)
+            .order('created_at', { ascending: false }); // Newest first
+
+        if (error) {
+            console.error('Error fetching logs:', error);
+            return [];
+        }
+
+        return (data || []).map((row: any) => ({
+            id: row.id,
+            assetId: row.asset_id,
+            operatorId: row.operator_id,
+            hoursReading: row.hours_reading,
+            answers: row.answers,
+            photoUrl: row.photo_url,
+            gpsLocation: { lat: row.gps_lat, lng: row.gps_lng },
+            createdAt: row.created_at
+        }));
+    }
+
     async getAlerts(): Promise<Alert[]> {
         const { data, error } = await supabase
             .from('alerts')
             .select('*')
-            .eq('is_resolved', false); // Only fetch active alerts
+            .eq('is_resolved', false);
 
         if (error) {
             console.error('Error fetching alerts:', error);
@@ -86,16 +114,14 @@ class SupabaseSentinelService implements SentinelDataService {
     }
 
     async submitLog(log: Omit<MaintenanceLog, 'id' | 'createdAt'>): Promise<MaintenanceLog> {
-        // Sanitize UUIDs (Postgres throws 22P02 if string is not valid UUID)
         const isValidUUID = (id?: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
 
-        // Map camelCase to snake_case for insert
         const dbPayload = {
-            asset_id: isValidUUID(log.assetId) ? log.assetId : undefined, // Fail-safe
+            asset_id: isValidUUID(log.assetId) ? log.assetId : undefined,
             operator_id: isValidUUID(log.operatorId) ? log.operatorId : null,
             hours_reading: log.hoursReading,
             answers: log.answers,
-            // photo_url: log.photoUrl // Add if we handle file uploads later
+            // photo_url: log.photoUrl // Still todo: upload logic
             gps_lat: log.gpsLocation?.lat,
             gps_lng: log.gpsLocation?.lng
         };
@@ -123,13 +149,10 @@ class SupabaseSentinelService implements SentinelDataService {
     }
 
     async seedData(): Promise<void> {
-        // 1. Create Organization (if not exists)
-        // Since we can't easily auto-create, we assume Schema script handled structure.
-        // We just insert assets.
         const { data: orgData } = await supabase
             .from('organizations')
             .select('id')
-            .single(); // Grab first org
+            .single();
 
         let orgId = orgData?.id;
 
@@ -183,16 +206,13 @@ class SupabaseSentinelService implements SentinelDataService {
                     gpsLocation: log.gpsLocation
                 });
 
-                // Mark as synced in local DB
+                // Mark as synced
                 await db.logs.update(log.id, { synced: true });
                 syncedCount++;
                 console.log(`Sync success: ${log.id}`);
             } catch (error: any) {
                 console.error(`Failed to sync log ${log.id}`, error);
 
-                // Auto-cleanup bad data
-                // 22P02: Invalid text representation (UUID format error)
-                // 23503: Foreign key violation (Asset not found)
                 if (error?.code === '22P02' || error?.code === '23503' || error?.message?.includes('Invalid Asset ID')) {
                     console.warn(`Deleting corrupted/incompatible log ${log.id} to unblock queue.`);
                     await db.logs.delete(log.id);
@@ -203,5 +223,4 @@ class SupabaseSentinelService implements SentinelDataService {
     }
 }
 
-// Export the active service
 export const api = new SupabaseSentinelService();
