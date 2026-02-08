@@ -478,6 +478,45 @@ select:focus {
     box-shadow: 0 4px 16px rgba(210, 153, 34, 0.2);
 }
 
+/* --- Checklist Forms --- */
+.checklist-item {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.toggle-btn.active-ok {
+    background: rgba(46, 160, 67, 0.2);
+    color: var(--status-ok);
+    border-color: var(--status-ok);
+}
+
+.toggle-btn.active-ko {
+    background: rgba(248, 81, 73, 0.2);
+    color: var(--status-down);
+    border-color: var(--status-down);
+}
+
+.camera-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
 .action-btn.secondary .icon-circle {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);

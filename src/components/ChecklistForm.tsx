@@ -49,88 +49,150 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
         if (photo) {
             console.log('Photo captured:', photo.name);
         }
-
+        setIsSubmitting(true);
         try {
-            await db.logs.add(log);
-            console.log('Log saved to offline DB:', log);
-        } catch (error) {
-            console.error('Failed to save offline log:', error);
-            alert('Error al guardar en base de datos local');
-            setSubmitting(false);
-            return;
-        }
+            const checklistData = {
+                items: responses,
+                location: location,
+                hasPhoto: !!photo,
+                photoName: photo ? photo.name : null,
+                timestamp: new Date().toISOString()
+            };
 
-        setSubmitting(false);
-        onSuccess();
-        onClose();
+            await api.createLog({
+                assetId: asset.id,
+                type: 'checklist',
+                data: checklistData,
+                location: location ? `${location.lat}, ${location.lng}` : undefined
+            });
+
+            // Update asset hours if provided
+            if (responses['horometer']) {
+                await api.updateAsset(asset.id, { currentHours: Number(responses['horometer']) });
+            }
+
+            onSuccess();
+            onClose();
+        } catch (error) {
+            console.error(error);
+            alert('Error al guardar reporte');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <div className="modal-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center',
-            zIndex: 1000, padding: '1rem'
-        }}>
-            <div className="card" style={{ maxWidth: '500px', width: '100%', border: '1px solid #1f6feb' }}>
-                <h2 style={{ marginBottom: '1.5rem' }}>Checklist: {asset.name}</h2>
-                <form className="checklist-form" onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <label>Lectura de Horómetro ({asset.currentHours}h actuales)</label>
-                        <input
-                            type="number"
-                            value={hours}
-                            onChange={e => setHours(Number(e.target.value))}
-                            min={asset.currentHours}
-                            required
-                        />
+        <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Checklist Diario</h2>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{asset.name}</span>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>
+                        <XIcon size={24} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    {/* Location Badge */}
+                    <div style={{ marginBottom: '1.5rem', padding: '0.8rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <MapPinIcon size={18} color={location ? 'var(--status-ok)' : 'var(--text-secondary)'} />
+                        <div>
+                            {location ? (
+                                <span style={{ color: 'var(--status-ok)', fontSize: '0.9rem' }}>
+                                    GPS Activo: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                                </span>
+                            ) : (
+                                <span style={{ color: 'var(--safety-orange)', fontSize: '0.9rem' }}>
+                                    {locationError || 'Obteniendo ubicación...'}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="input-group">
-                        <label>¿Nivel de aceite motor?</label>
-                        <select value={answers.oilLevel} onChange={e => setAnswers({ ...answers, oilLevel: e.target.value })}>
-                            <option value="ok">Óptimo (Check)</option>
-                            <option value="low">Bajo (Requiere relleno)</option>
-                            <option value="critical">Crítico (Parar máquina)</option>
-                        </select>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                        {ITEMS.map(item => (
+                            <div key={item.id} className="checklist-item">
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{item.label}</label>
+
+                                {item.type === 'boolean' && (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            type="button"
+                                            className={`toggle-btn ${responses[item.id] === true ? 'active-ok' : ''}`}
+                                            onClick={() => handleChange(item.id, true)}
+                                        >OK</button>
+                                        <button
+                                            type="button"
+                                            className={`toggle-btn ${responses[item.id] === false ? 'active-ko' : ''}`}
+                                            onClick={() => handleChange(item.id, false)}
+                                        >Fallo</button>
+                                    </div>
+                                )}
+
+                                {item.type === 'ok_fail' && (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            type="button"
+                                            className={`toggle-btn ${responses[item.id] === 'ok' ? 'active-ok' : ''}`}
+                                            onClick={() => handleChange(item.id, 'ok')}
+                                        >✓ Bien</button>
+                                        <button
+                                            type="button"
+                                            className={`toggle-btn ${responses[item.id] === 'fail' ? 'active-ko' : ''}`}
+                                            onClick={() => handleChange(item.id, 'fail')}
+                                        >⚠ Mal</button>
+                                    </div>
+                                )}
+
+                                {item.type === 'number' && (
+                                    <input
+                                        type="number"
+                                        style={{ padding: '0.8rem', background: '#0d1117', border: '1px solid var(--border-color)', color: 'white', borderRadius: '6px', width: '100%' }}
+                                        onChange={(e) => handleChange(item.id, e.target.value)}
+                                        placeholder="0.0"
+                                    />
+                                )}
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="input-group">
-                        <label>¿Ruidos inusuales en motor/hidráulicos?</label>
-                        <select value={answers.noises} onChange={e => setAnswers({ ...answers, noises: e.target.value })}>
-                            <option value="no">No detectados</option>
-                            <option value="yes">Sí detectados (Reportar)</option>
-                        </select>
-                    </div>
-
-                    <div className="input-group">
-                        <label>¿Fugas visibles de fluidos?</label>
-                        <select value={answers.leaks} onChange={e => setAnswers({ ...answers, leaks: e.target.value })}>
-                            <option value="no">Ninguna</option>
-                            <option value="minor">Fuga menor (Sudar)</option>
-                            <option value="major">Goteo/Fuga mayor</option>
-                        </select>
-                    </div>
-
-                    <div className="input-group" style={{ marginTop: '0.5rem', border: '1px dashed #30363d', padding: '1rem', borderRadius: '6px' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#58a6ff', cursor: 'pointer' }}>
-                            📷 Agregar Evidencia (Foto)
+                    {/* Camera Button */}
+                    <div style={{ marginTop: '2rem' }}>
+                        <label
+                            className="camera-btn"
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                padding: '1rem', border: '2px dashed var(--border-color)', borderRadius: '8px', cursor: 'pointer',
+                                background: photo ? 'rgba(46, 160, 67, 0.1)' : 'transparent',
+                                color: photo ? 'var(--status-ok)' : 'var(--text-secondary)'
+                            }}
+                        >
+                            <CameraIcon />
+                            <span>{photo ? `Foto Adjunta: ${photo.name}` : 'Tomar Foto de Evidencia'}</span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                style={{ display: 'none' }}
+                                onChange={handlePhotoChange}
+                            />
                         </label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={handlePhoto}
-                            style={{ fontSize: '0.8rem' }}
-                        />
-                        {photo && <small style={{ display: 'block', marginTop: '0.5rem', color: '#3fb950' }}>✓ {photo.name}</small>}
                     </div>
 
-                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-                        <button type="submit" disabled={submitting}>
-                            {submitting ? 'Guardando...' : 'Guardar y Sincronizar'}
-                        </button>
-                        <button type="button" onClick={onClose} style={{ backgroundColor: '#21262d', border: '1px solid #30363d' }}>
-                            Cancelar
+                    <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>Cancelar</button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            style={{
+                                backgroundColor: 'var(--status-ok)', color: 'white', border: 'none',
+                                padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 600,
+                                opacity: isSubmitting ? 0.7 : 1
+                            }}
+                        >
+                            {isSubmitting ? 'Enviando...' : 'Guardar Reporte'}
                         </button>
                     </div>
                 </form>
