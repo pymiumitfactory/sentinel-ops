@@ -1,0 +1,33 @@
+/* Basic Responsive Grid */
+.layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    gap: 2rem;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .layout-grid {
+        display: flex;
+        flex-direction: column-reverse; /* Alerts at bottom, Fleet at top */
+    }
+
+    /* Additional Mobile Tweaks */
+    .header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+
+    .status-indicator {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .modal {
+        width: 95%;
+        margin: 1rem;
+        max-height: 90vh;
+    }
+}

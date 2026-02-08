@@ -5,6 +5,7 @@ import { ChecklistForm } from './components/ChecklistForm';
 import { AssetHistory } from './components/AssetHistory';
 import { TrendChart } from './components/TrendChart';
 import './styles/main.css';
+import './styles/responsive.css';
 
 const App: React.FC = () => {
     const [assets, setAssets] = useState<Asset[]>([]);
@@ -18,13 +19,32 @@ const App: React.FC = () => {
     const isSyncing = useRef(false);
 
     const fetchData = async () => {
-        const [assetsData, alertsData] = await Promise.all([
-            api.getAssets(),
-            api.getAlerts()
-        ]);
-        setAssets(assetsData);
-        setAlerts(alertsData);
-        setLoading(false);
+        try {
+            // Try fetching fresh data first
+            const [assetsData, alertsData] = await Promise.all([
+                api.getAssets(),
+                api.getAlerts()
+            ]);
+
+            setAssets(assetsData);
+            setAlerts(alertsData);
+            setLoading(false);
+
+            // Cache for offline use
+            localStorage.setItem('cached_assets', JSON.stringify(assetsData));
+            localStorage.setItem('cached_alerts', JSON.stringify(alertsData));
+
+        } catch (error) {
+            console.warn('Network error, loading from cache...', error);
+
+            // Fallback to cache
+            const cachedAssets = localStorage.getItem('cached_assets');
+            const cachedAlerts = localStorage.getItem('cached_alerts');
+
+            if (cachedAssets) setAssets(JSON.parse(cachedAssets));
+            if (cachedAlerts) setAlerts(JSON.parse(cachedAlerts));
+            setLoading(false);
+        }
     };
 
     const runSync = async () => {
@@ -112,7 +132,7 @@ const App: React.FC = () => {
                 )}
             </section>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(300px, 1fr)', gap: '2rem' }}>
+            <div className="layout-grid">
                 {/* Fleet Section */}
                 <section className="fleet-section">
                     <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Maquinaria Activa (Minería & Agro)</h2>
@@ -153,7 +173,7 @@ const App: React.FC = () => {
                     </div>
                 </section>
 
-                {/* Alerts Sidebar */}
+                {/* Alerts Sidebar (remains same) */}
                 <section className="alerts-section">
                     <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#f85149' }}>Alertas Críticas ({alerts.length})</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
