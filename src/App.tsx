@@ -256,9 +256,8 @@ const App: React.FC = () => {
             <AssetDrawer
                 asset={drawerAsset}
                 onClose={() => setDrawerAsset(null)}
-                // Provide handlers for internal navigation
                 onRefreshRequest={fetchData}
-                onAssetUpdate={async (id, data) => handleSaveAsset({ ...data, id })}
+                onAssetUpdate={async (id: string, data: Partial<Asset>) => handleSaveAsset({ ...data, id })}
                 onAssetDelete={handleDeleteAsset}
             />
 
