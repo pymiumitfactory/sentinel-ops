@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Asset, ChecklistItem } from '../types';
 import { api } from '../api/service';
 // Ensure these icons are exported in Icons.tsx. If not, we fall back to text.
-import { XIcon, CheckIcon, MapPinIcon } from './Icons';
+import { XIcon, MapPinIcon } from './Icons';
 
 // Local component for Camera Icon to avoid import issues if not in Icons.tsx yet
 const CameraIcon = ({ size = 20 }: { size?: number }) => (

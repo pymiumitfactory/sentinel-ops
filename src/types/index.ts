@@ -1,6 +1,11 @@
 export type AssetStatus = 'active' | 'warning' | 'down' | 'maintenance';
 export type AssetCategory = 'heavy_machinery' | 'irrigation_system' | 'transport';
 
+export interface AsyncTaskState {
+    loading: boolean;
+    error: string | null;
+}
+
 export interface Asset {
     id: string;
     orgId?: string; // Optional for frontend but exists in DB
@@ -33,6 +38,13 @@ export interface Alert {
     description: string;
     isResolved: boolean;
     createdAt: string;
+}
+
+// Ensure ChecklistItem is exported for ChecklistForm.tsx
+export interface ChecklistItem {
+    id: string;
+    label: string;
+    type: 'boolean' | 'ok_fail' | 'number';
 }
 
 // Re-export specific types if needed

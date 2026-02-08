@@ -15,6 +15,7 @@ export interface SentinelDataService {
     seedData(): Promise<void>;
     syncPendingLogs(): Promise<number>;
     getPendingLogsCount(): Promise<number>;
+    createLog(payload: { assetId: string, type: string, data: any, location?: string }): Promise<void>;
 }
 
 // Supabase Implementation
@@ -317,6 +318,33 @@ class SupabaseSentinelService implements SentinelDataService {
             }
         }
         return syncedCount;
+    }
+
+    async createLog(payload: { assetId: string, type: string, data: any, location?: string }): Promise<void> {
+        // Adapt ChecklistForm payload to MaintenanceLog structure
+        // Extract hours reading if available in data items
+        const hoursReading = payload.data?.items?.horometer
+            ? Number(payload.data.items.horometer)
+            : 0; // Default or fetch current
+
+        // Parse location string back to object if needed, or use payload.data.location
+        let gpsLocation = undefined;
+        if (payload.data?.location) {
+            gpsLocation = payload.data.location;
+        } else if (payload.location) {
+            const [lat, lng] = payload.location.split(',').map((n: string) => Number(n.trim()));
+            if (!isNaN(lat) && !isNaN(lng)) gpsLocation = { lat, lng };
+        }
+
+        const logEntry: Omit<MaintenanceLog, 'id' | 'createdAt'> = {
+            assetId: payload.assetId,
+            operatorId: undefined, // Add auth later
+            hoursReading: hoursReading,
+            answers: payload.data, // Store full JSON data
+            gpsLocation: gpsLocation
+        };
+
+        await this.submitLog(logEntry);
     }
 }
 
