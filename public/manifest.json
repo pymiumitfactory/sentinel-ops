@@ -1,0 +1,17 @@
+{
+  "name": "Sentinel Ops",
+  "short_name": "Sentinel",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "description": "Herramienta de Checklist y Monitoreo de Campo para Sentinel Ops.",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

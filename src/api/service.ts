@@ -126,7 +126,7 @@ class SupabaseSentinelService implements SentinelDataService {
         // 1. Create Organization (if not exists)
         // Since we can't easily auto-create, we assume Schema script handled structure.
         // We just insert assets.
-        const { data: orgData, error: orgError } = await supabase
+        const { data: orgData } = await supabase
             .from('organizations')
             .select('id')
             .single(); // Grab first org

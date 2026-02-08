@@ -19,7 +19,7 @@ Este documento rastrea el progreso técnico para cumplir con el alcance definido
 - [x] **Captura de Evidencia**: Implementar input de cámara/fotos en `ChecklistForm`.
 - [x] **Persistencia Offline (Dexie.js)**: Guardar reportes en IndexedDB cuando no hay señal.
 - [x] **Sincronización Background**: Service Worker que envíe los datos al recuperar conexión.
-- [ ] **Manifiesto PWA**: Configurar iconos y `manifest.json` para que sea instalable.
+- [x] **Manifiesto PWA**: Configurar iconos y `manifest.json` para que sea instalable.
 
 ## 🟡 4. Semáforo y Dashboard (Inteligencia)
 - [x] **Panel de Alertas**: Visualización de alertas críticas. *(Integrado con Supabase)*
