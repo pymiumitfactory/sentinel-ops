@@ -9,6 +9,7 @@ import { QRScanner } from './components/QRScanner';
 import {
     PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon, ScanIcon
 } from './components/Icons';
+import { Login } from './components/Login';
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
@@ -19,6 +20,7 @@ const App: React.FC = () => {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null); // Auth User
 
     // UI State
     const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null);
@@ -31,6 +33,31 @@ const App: React.FC = () => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const isSyncing = useRef(false);
     const { showToast } = useToast();
+
+    // -- Auth Check --
+    useEffect(() => {
+        api.getCurrentUser().then((u) => {
+            if (u) {
+                setUser(u);
+                fetchData(); // Only fetch data if logged in
+            } else {
+                setLoading(false); // Stop loading if no user (show login)
+            }
+        });
+    }, []);
+
+    const handleLoginSuccess = async () => {
+        const u = await api.getCurrentUser();
+        setUser(u);
+        fetchData();
+    };
+
+    const handleLogout = async () => {
+        await api.signOut();
+        setUser(null);
+        setAssets([]);
+        setAlerts([]);
+    };
 
     // -- Data Fetching Logic --
     const fetchData = async () => {
@@ -128,6 +155,12 @@ const App: React.FC = () => {
         } catch (e) { console.error(e); showToast('Error al eliminar', 'error'); }
     };
 
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0d1117' }}><div className="spinner"></div></div>;
+
+    if (!user) {
+        return <Login onSuccess={handleLoginSuccess} />;
+    }
+
     return (
         <div className="app-container">
             {/* -- Minimal Header -- */}
@@ -138,6 +171,12 @@ const App: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <button
+                        onClick={handleLogout}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', marginRight: '0.5rem' }}
+                    >
+                        Salir
+                    </button>
                     {/* Offline Indicator */}
                     {(pendingCount > 0 || !isOnline) && (
                         <span

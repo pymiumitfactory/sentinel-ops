@@ -17,6 +17,9 @@ export interface SentinelDataService {
     getPendingLogsCount(): Promise<number>;
     createLog(payload: { assetId: string, type: string, data: any, location?: string, photoFile?: File }): Promise<void>;
     uploadPhoto(file: File, folder: string): Promise<string | null>;
+    signIn(email: string, password: string): Promise<{ user: any, error: any }>;
+    signOut(): Promise<void>;
+    getCurrentUser(): Promise<any>;
 }
 
 // Supabase Implementation
@@ -360,6 +363,8 @@ class SupabaseSentinelService implements SentinelDataService {
         try {
             if (isOffline) throw new Error('Offline Mode');
 
+            const { user, orgId } = await this._getUserContext();
+
             let photoUrl = null;
             if (payload.photoFile) {
                 photoUrl = await this.uploadPhoto(payload.photoFile, payload.assetId);
@@ -367,12 +372,15 @@ class SupabaseSentinelService implements SentinelDataService {
 
             const logEntry: Omit<MaintenanceLog, 'id' | 'createdAt'> = {
                 assetId: payload.assetId,
-                operatorId: undefined,
+                operatorId: user.id, // Now using real User ID!
                 hoursReading: hoursReading,
-                answers: payload.data,
+                answers: payload.data, // Store full JSON data
                 photoUrl: photoUrl || undefined, // Add the uploaded URL
                 gpsLocation: gpsLocation
             };
+
+            // Ensure createLog passes org_id implicitly via RLS or explicit insert if needed
+            // For MVP strictness, we might want to validate asset belongs to orgId here too
 
             await this.submitLog(logEntry);
 
@@ -394,4 +402,42 @@ class SupabaseSentinelService implements SentinelDataService {
     }
 }
 
+    // -- Auth Methods --
+    async signIn(email: string, password: string) {
+    return await supabase.auth.signInWithPassword({ email, password });
+}
+
+    async signOut() {
+    return await supabase.auth.signOut();
+}
+
+    async getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+}
+
+    // -- Private Helper for Multi-tenancy --
+    private async _getUserContext() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuario no autenticado');
+
+    // 1. Try fetching from profiles (Source of Truth)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('org_id')
+        .eq('id', user.id)
+        .single();
+
+    // 2. Fallback to metadata or default (for development/legacy)
+    const orgId = profile?.org_id || user.user_metadata?.org_id;
+
+    if (!orgId) {
+        console.warn('Usuario sin organización asignada. Modo restringido.');
+    }
+
+    return { user, orgId };
+}
+}
+
 export const api = new SupabaseSentinelService();
+```
