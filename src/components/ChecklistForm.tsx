@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
-import type { Asset } from '../types';
-import { db } from '../api/offline_db';
-import type { OfflineLog } from '../types/mobile_checklist';
+import React, { useState, useEffect } from 'react';
+import type { Asset, ChecklistItem } from '../types';
+import { api } from '../api/service';
+// Ensure these icons are exported in Icons.tsx. If not, we fall back to text.
+import { XIcon, CheckIcon, MapPinIcon } from './Icons';
+
+// Local component for Camera Icon to avoid import issues if not in Icons.tsx yet
+const CameraIcon = ({ size = 20 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+        <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+);
 
 interface ChecklistFormProps {
     asset: Asset;
@@ -9,18 +18,44 @@ interface ChecklistFormProps {
     onSuccess: () => void;
 }
 
-export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, onSuccess }) => {
-    const [hours, setHours] = useState(asset.currentHours);
-    const [answers, setAnswers] = useState({
-        oilLevel: 'ok',
-        noises: 'no',
-        leaks: 'no',
-        performance: 'normal'
-    });
-    const [photo, setPhoto] = useState<File | null>(null);
-    const [submitting, setSubmitting] = useState(false);
+const ITEMS: ChecklistItem[] = [
+    { id: 'oil_level', label: 'Nivel de Aceite Motor', type: 'boolean' },
+    { id: 'coolant_level', label: 'Nivel de Refrigerante', type: 'boolean' },
+    { id: 'tire_pressure', label: 'Presión de Neumáticos / Orugas', type: 'ok_fail' },
+    { id: 'leaks', label: 'Fugas Visibles (Hidráulico/Motor)', type: 'ok_fail' },
+    { id: 'lights', label: 'Luces y Alarma de Retroceso', type: 'ok_fail' },
+    { id: 'fuel_level', label: 'Nivel de Combustible (%)', type: 'number' },
+    { id: 'horometer', label: 'Horómetro Actual', type: 'number' },
+];
 
-    const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, onSuccess }) => {
+    const [responses, setResponses] = useState<Record<string, any>>({});
+    const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
+    const [locationError, setLocationError] = useState('');
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Get GPS on mount
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                (err) => {
+                    console.warn(err);
+                    setLocationError('GPS no disponible');
+                },
+                { enableHighAccuracy: true, timeout: 10000 } // 10s timeout
+            );
+        } else {
+            setLocationError('Navegador sin soporte GPS');
+        }
+    }, []);
+
+    const handleChange = (id: string, value: any) => {
+        setResponses(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setPhoto(e.target.files[0]);
         }
@@ -28,27 +63,6 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSubmitting(true);
-
-        // Create offline record logic
-        const log: OfflineLog = {
-            id: crypto.randomUUID(),
-            assetId: asset.id,
-            // operatorId: undefined, // MVP: No auth yet
-            hoursReading: hours,
-            answers: [
-                { questionId: 'oil', value: answers.oilLevel, severity: answers.oilLevel === 'critical' ? 'critical' : 'ok' },
-                { questionId: 'noises', value: answers.noises, severity: answers.noises === 'yes' ? 'warning' : 'ok' },
-                { questionId: 'leaks', value: answers.leaks, severity: answers.leaks === 'major' ? 'critical' : 'ok' }
-            ],
-            synced: false,
-            createdAt: Date.now()
-        };
-
-        // For MVP we just console log the photo, but here we would convert to blob for IndexedDB
-        if (photo) {
-            console.log('Photo captured:', photo.name);
-        }
         setIsSubmitting(true);
         try {
             const checklistData = {
@@ -62,7 +76,8 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
             await api.createLog({
                 assetId: asset.id,
                 type: 'checklist',
-                data: checklistData,
+                data: checklistData, // Store complete data JSON
+                // Also pass location string if API supports it specifically
                 location: location ? `${location.lat}, ${location.lng}` : undefined
             });
 
@@ -89,7 +104,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
                         <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Checklist Diario</h2>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{asset.name}</span>
                     </div>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>
+                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                         <XIcon size={24} />
                     </button>
                 </div>
@@ -152,6 +167,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
                                         style={{ padding: '0.8rem', background: '#0d1117', border: '1px solid var(--border-color)', color: 'white', borderRadius: '6px', width: '100%' }}
                                         onChange={(e) => handleChange(item.id, e.target.value)}
                                         placeholder="0.0"
+                                        step="0.1"
                                     />
                                 )}
                             </div>
@@ -182,14 +198,15 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
                     </div>
 
                     <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>Cancelar</button>
+                        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>Cancelar</button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             style={{
                                 backgroundColor: 'var(--status-ok)', color: 'white', border: 'none',
                                 padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 600,
-                                opacity: isSubmitting ? 0.7 : 1
+                                opacity: isSubmitting ? 0.7 : 1,
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer'
                             }}
                         >
                             {isSubmitting ? 'Enviando...' : 'Guardar Reporte'}

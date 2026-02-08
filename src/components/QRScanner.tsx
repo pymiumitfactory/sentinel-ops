@@ -15,7 +15,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan, a
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [error, setError] = useState<string>('');
-    const requestRef = useRef<number>();
+    // Fix: Explicitly initialize useRef with undefined to avoid TS2554
+    const requestRef = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         if (isOpen) {
@@ -53,7 +54,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan, a
             stream.getTracks().forEach(track => track.stop());
             setStream(null);
         }
-        if (requestRef.current) {
+        if (requestRef.current !== undefined) {
             cancelAnimationFrame(requestRef.current);
         }
     };
