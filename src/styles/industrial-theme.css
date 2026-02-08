@@ -1,0 +1,170 @@
+:root {
+    /* Industrial Colors */
+    --bg-dark: #121212;
+    --bg-card: #1E1E1E;
+    --bg-header: #263238;
+    /* Blue Grey Dark */
+
+    --text-primary: #ECEFF1;
+    --text-secondary: #B0BEC5;
+
+    /* Safety Accents */
+    --safety-yellow: #FFD600;
+    /* Main Accent */
+    --safety-orange: #FF6D00;
+    --industrial-blue: #0277BD;
+
+    /* Status Colors */
+    --status-ok: #00C853;
+    /* Vivid Green */
+    --status-warning: #FFAB00;
+    /* Amber */
+    --status-down: #D50000;
+    /* Red */
+
+    /* UI Elements */
+    --border-color: #37474F;
+    --border-radius: 4px;
+    /* More squared, rugged look */
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header Override */
+.header {
+    background-color: var(--bg-header);
+    border-bottom: 3px solid var(--safety-yellow);
+    /* Industrial accent */
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+}
+
+.logo {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    color: var(--safety-yellow);
+    text-transform: uppercase;
+}
+
+/* Card Styling - Rugged */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.card:active {
+    transform: scale(0.98);
+}
+
+/* Buttons - Touch Friendly */
+button {
+    background-color: var(--bg-header);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    transition: background 0.2s;
+    min-height: 48px;
+    /* Tappable area */
+}
+
+button:hover {
+    background-color: #37474F;
+    border-color: var(--safety-yellow);
+}
+
+/* Primary Action Buttons */
+button[style*="flex: 1"] {
+    background-color: var(--safety-yellow);
+    color: #000;
+    /* Black text on yellow */
+    border: none;
+}
+
+button[style*="flex: 1"]:hover {
+    background-color: #FFEA00;
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background-color: rgba(0, 200, 83, 0.2);
+    color: var(--status-ok);
+    border: 1px solid var(--status-ok);
+}
+
+.status-warning {
+    background-color: rgba(255, 171, 0, 0.2);
+    color: var(--status-warning);
+    border: 1px solid var(--status-warning);
+}
+
+.status-down {
+    background-color: rgba(213, 0, 0, 0.2);
+    color: var(--status-down);
+    border: 1px solid var(--status-down);
+}
+
+/* Modal Override */
+.modal {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-top: 4px solid var(--safety-yellow);
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+    background: #263238;
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 0.8rem;
+    border-radius: var(--border-radius);
+    width: 100%;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--safety-yellow);
+}
+
+/* Alerts Section */
+.alerts-section h2 {
+    color: var(--status-down) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--status-down);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}

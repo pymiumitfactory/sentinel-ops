@@ -8,6 +8,7 @@ import { useToast } from './components/Toast';
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
+import './styles/industrial-theme.css';
 
 const App: React.FC = () => {
     const [assets, setAssets] = useState<Asset[]>([]);
