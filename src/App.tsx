@@ -6,6 +6,10 @@ import { AssetHistory } from './components/AssetHistory';
 import { TrendChart } from './components/TrendChart';
 import { useToast } from './components/Toast';
 import { AssetForm } from './components/AssetForm';
+import {
+    ClockIcon, MapPinIcon, ClipboardCheckIcon, HistoryIcon,
+    EditIcon, PlusIcon, AlertTriangleIcon
+} from './components/Icons';
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
@@ -116,27 +120,31 @@ const App: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-        runSync();
 
-        // Listen for online/offline status
-        const handleOnline = async () => {
+        // Background Sync Interval (Every 60s)
+        const syncInterval = setInterval(() => {
+            if (navigator.onLine) runSync();
+        }, 60000);
+
+        // Network Listeners
+        const handleOnline = () => {
             setIsOnline(true);
-            await runSync();
-            // Refresh data after sync to show updated status (e.g. Asset turning Red)
-            fetchData();
+            showToast('Conexión recuperada', 'success');
+            runSync();
+            fetchData(); // Refresh UI
         };
-        const handleOffline = () => setIsOnline(false);
+        const handleOffline = () => {
+            setIsOnline(false);
+            showToast('Modo Offline activado', 'error');
+        };
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Periodic sync check (every 30s)
-        const interval = setInterval(runSync, 30000);
-
         return () => {
+            clearInterval(syncInterval);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
-            clearInterval(interval);
         };
     }, []);
 
@@ -145,7 +153,10 @@ const App: React.FC = () => {
     return (
         <div className="app-container">
             <header className="header">
-                <div className="logo">Sentinel Ops <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>MVP</span></div>
+                <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <AlertTriangleIcon size={24} color="var(--safety-yellow)" />
+                    Sentinel Ops <span style={{ fontSize: '0.8rem', color: '#8b949e', marginLeft: '0.2rem' }}>BETA</span>
+                </div>
                 <div className="status-indicator">
                     <span
                         className={`dot ${isOnline ? 'online' : 'offline'}`}
@@ -161,8 +172,9 @@ const App: React.FC = () => {
                         </span>
                     )}
                 </div>
-                {/* Add Asset Button (Desktop/Mobile) */}
+                {/* Desktop "New Asset" Button */}
                 <button
+                    className="desktop-only-btn"
                     onClick={() => setIsCreatingAsset(true)}
                     style={{
                         marginLeft: '1rem',
@@ -170,15 +182,15 @@ const App: React.FC = () => {
                         fontSize: '0.8rem',
                         background: 'transparent',
                         border: '1px solid var(--safety-yellow)',
-                        color: 'var(--safety-yellow)'
+                        color: 'var(--safety-yellow)',
+                        display: window.innerWidth > 768 ? 'block' : 'none'
                     }}
                 >
                     + NUEVO
                 </button>
             </header>
 
-            {/* Insights Section */}
-            <section style={{ marginBottom: '2.5rem' }}>
+            <section className="chart-section" style={{ marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.2rem', color: '#8b949e', margin: 0 }}>Análisis de Salud de Flota</h2>
                     {assets.length === 0 && (
@@ -186,20 +198,19 @@ const App: React.FC = () => {
                             onClick={() => api.seedData()}
                             style={{ backgroundColor: '#238636', color: 'white', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', fontSize: '0.9rem' }}
                         >
-                            🌱 Inicializar Base de Datos (Seed Demo)
+                            🌱 Inicializar Apps (Seed Demo)
                         </button>
                     )}
                 </div>
-                {assets.length === 0 ? (
-                    <div className="card" style={{ padding: '3rem', textAlign: 'center', color: '#8b949e' }}>
-                        <p>No hay activos registrados en la base de datos.</p>
-                        <p>Haz clic en "Inicializar Base de Datos" para cargar datos de prueba.</p>
-                    </div>
-                ) : (
+                {assets.length > 0 ? (
                     <div className="grid">
                         <TrendChart label="Consumo Promedio de Combustible" data={[45, 48, 42, 50, 55, 60, 58]} />
                         <TrendChart label="Horas de Operación / Día" data={[8, 10, 12, 11, 9, 8, 11]} color="#58a6ff" />
                         <TrendChart label="Detección de Vibración G (Promedio)" data={[0.2, 0.22, 0.25, 0.4, 0.35, 0.5, 0.45]} color="#d29922" />
+                    </div>
+                ) : (
+                    <div className="card" style={{ padding: '3rem', textAlign: 'center', color: '#8b949e' }}>
+                        <p>No hay activos registrados. Inicializa la base de datos para comenzar.</p>
                     </div>
                 )}
             </section>
@@ -212,42 +223,52 @@ const App: React.FC = () => {
                     </h2>
 
                     {loading ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: '#8b949e' }}>
+                        <div style={{ padding: '4rem', textAlign: 'center', color: '#8b949e' }}>
                             <div className="spinner"></div>
-                            <p>Cargando flota...</p>
+                            <p style={{ marginTop: '1rem' }}>Cargando flota...</p>
                         </div>
                     ) : (
                         <div className="grid">
                             {assets.map(asset => (
                                 <div key={asset.id} className="card">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                         <div>
-                                            <h3 style={{ margin: 0, cursor: 'pointer' }} onClick={() => setEditingAsset(asset)}>
-                                                {asset.name} <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>✎</span>
-                                            </h3>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <h3 style={{ margin: 0, lineHeight: 1 }}>{asset.name}</h3>
+                                                <button className="edit-icon-btn" onClick={() => setEditingAsset(asset)}>
+                                                    <EditIcon size={16} />
+                                                </button>
+                                            </div>
                                             <code style={{ fontSize: '0.8rem', color: 'var(--safety-orange)' }}>{asset.internalId}</code>
                                         </div>
                                         <span className={`badge status-${asset.status}`}>{asset.status}</span>
                                     </div>
 
-                                    <div style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                            <span style={{ color: 'var(--text-secondary)' }}>Horas:</span>
-                                            <span style={{ fontWeight: 'bold' }}>{asset.currentHours} h</span>
+                                    <div style={{ padding: '0.5rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
+                                        <div className="meta-row">
+                                            <ClockIcon size={18} />
+                                            <span>{asset.currentHours} horas</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-secondary)' }}>Ubicación:</span>
+                                        <div className="meta-row">
+                                            <MapPinIcon size={18} />
                                             <span>{asset.location}</span>
                                         </div>
                                     </div>
 
-                                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem' }}>
-                                        <button onClick={() => setSelectedAsset(asset)} style={{ flex: 1 }}>Checklist</button>
+                                    <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                        <button onClick={() => setSelectedAsset(asset)} style={{ flex: 2 }}>
+                                            <div className="btn-content">
+                                                <ClipboardCheckIcon size={20} color="#000" />
+                                                CHECKLIST
+                                            </div>
+                                        </button>
                                         <button
                                             onClick={() => setHistoryAsset(asset)}
-                                            style={{ border: '1px solid var(--border-color)' }}
+                                            style={{ flex: 1, border: '1px solid var(--border-color)', background: 'transparent' }}
                                         >
-                                            Historial
+                                            <div className="btn-content">
+                                                <HistoryIcon size={20} />
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
@@ -256,9 +277,11 @@ const App: React.FC = () => {
                     )}
                 </section>
 
-                {/* Alerts Sidebar (remains same) */}
+                {/* Alerts Sidebar */}
                 <section className="alerts-section">
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#f85149' }}>Alertas Críticas ({alerts.length})</h2>
+                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#f85149', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <AlertTriangleIcon color="#f85149" /> Alertas Críticas ({alerts.length})
+                    </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {alerts.map(alert => (
                             <div key={alert.id} className="card" style={{ borderColor: '#f85149' }}>
@@ -276,6 +299,15 @@ const App: React.FC = () => {
                 </section>
             </div>
 
+            {/* Floating Action Button for New Asset */}
+            <button
+                className="fab-button"
+                onClick={() => setIsCreatingAsset(true)}
+                title="Nuevo Activo"
+            >
+                <PlusIcon size={32} color="#000" />
+            </button>
+
             {/* Modals */}
             {(isCreatingAsset || editingAsset) && (
                 <AssetForm
@@ -291,7 +323,7 @@ const App: React.FC = () => {
                     asset={selectedAsset}
                     onClose={() => setSelectedAsset(null)}
                     onSuccess={() => {
-                        alert('Reporte guardado exitosamente (Sincronización en curso...)');
+                        showToast('Reporte guardado exitosamente', 'success');
                         fetchData();
                     }}
                 />

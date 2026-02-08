@@ -185,3 +185,74 @@ select:focus {
     padding-bottom: 0.5rem;
     display: inline-block;
 }
+
+/* --- New UI Elements (Icon Based) --- */
+
+/* Floating Action Button (Mobile Primary) */
+.fab-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 1.5rem;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--safety-yellow);
+    color: #000;
+    border: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.fab-button:active {
+    transform: scale(0.95);
+}
+
+/* Metadata Rows (Icon + Text) */
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+}
+
+.meta-row svg {
+    color: var(--safety-orange);
+    /* Icons pop with orange */
+    opacity: 0.9;
+}
+
+.meta-row span {
+    color: var(--text-primary);
+}
+
+/* Button Content Alignment */
+.btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+/* Edit Icon on Card */
+.edit-icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px;
+    cursor: pointer;
+    min-height: auto;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.edit-icon-btn:hover {
+    color: var(--safety-yellow);
+    background: rgba(255, 255, 255, 0.05);
+}
