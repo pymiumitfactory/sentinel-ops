@@ -387,18 +387,7 @@ class SupabaseSentinelService implements SentinelDataService {
         } catch (error) {
             console.warn('Network/Upload failed, saving locally:', error);
 
-            // Save to Dexie for later sync
-            await db.logs.add({
-                id: crypto.randomUUID(),
-                assetId: payload.assetId,
-                answers: payload.data, // Should match ChecklistAnswer[] roughly or fail gracefully
-                hoursReading: hoursReading,
-                gpsLocation: gpsLocation,
-                createdAt: Date.now(),
-                synced: false,
-                photoBlob: payload.photoFile // Store the FILE object (Blob compatible)
-            });
-        }
+        });
     }
 }
 
@@ -440,4 +429,3 @@ class SupabaseSentinelService implements SentinelDataService {
 }
 
 export const api = new SupabaseSentinelService();
-```
