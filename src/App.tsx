@@ -7,8 +7,9 @@ import { useToast } from './components/Toast';
 import { AssetForm } from './components/AssetForm';
 import { NotificationCenter } from './components/NotificationCenter';
 import { AssetDrawer } from './components/AssetDrawer';
+import { QRScanner } from './components/QRScanner';
 import {
-    PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon
+    PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon, ScanIcon
 } from './components/Icons';
 import './styles/main.css';
 import './styles/responsive.css';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
     // UI State
     const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     // Legacy Modals (Triggered from Drawer)
     const [checklistAsset, setChecklistAsset] = useState<Asset | null>(null);
@@ -143,35 +145,45 @@ const App: React.FC = () => {
                     Sentinel Ops
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {/* Offline Indicator (only if offline/syncing) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    {/* Offline Indicator */}
                     {(pendingCount > 0 || !isOnline) && (
                         <span
                             onClick={runSync}
                             style={{
-                                fontSize: '0.8rem',
+                                fontSize: '0.7rem',
                                 color: !isOnline ? 'var(--text-secondary)' : 'var(--safety-orange)',
                                 border: '1px solid currentColor',
-                                padding: '2px 8px',
+                                padding: '2px 6px',
                                 borderRadius: '12px'
                             }}
                         >
-                            {!isOnline ? 'OFFLINE' : `SYNC (${pendingCount})`}
+                            {!isOnline ? 'OFFLINE' : `SYNC ${pendingCount}`}
                         </span>
                     )}
+
+                    {/* QR Scanner Button */}
+                    <button
+                        className="icon-btn"
+                        onClick={() => setIsScannerOpen(true)}
+                        title="Escanear Activo"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '4px' }}
+                    >
+                        <ScanIcon size={22} />
+                    </button>
 
                     {/* Notification Bell */}
                     <button
                         className="icon-btn"
                         onClick={() => setIsNotificationOpen(true)}
-                        style={{ position: 'relative', background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
+                        style={{ position: 'relative', background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '4px' }}
                     >
-                        <BellIcon size={24} />
+                        <BellIcon size={22} />
                         {alerts.filter(a => !a.isResolved).length > 0 && (
                             <span style={{
-                                position: 'absolute', top: -2, right: -2,
-                                width: 10, height: 10, borderRadius: '50%',
-                                background: 'var(--status-down)', border: '2px solid var(--bg-primary)'
+                                position: 'absolute', top: 2, right: 2,
+                                width: 8, height: 8, borderRadius: '50%',
+                                background: 'var(--status-down)', border: '1px solid var(--bg-primary)'
                             }}></span>
                         )}
                     </button>
@@ -183,11 +195,6 @@ const App: React.FC = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>Flota Activa</h2>
-                    {assets.length === 0 && !loading && (
-                        <button onClick={() => api.seedData()} style={{ fontSize: '0.8rem', color: 'var(--accent-color)', background: 'transparent', border: 'none' }}>
-                            + Cargar Datos Demo
-                        </button>
-                    )}
                 </div>
 
                 {loading && assets.length === 0 ? (
@@ -229,6 +236,22 @@ const App: React.FC = () => {
             </button>
 
             {/* -- Drawers & Modals -- */}
+
+            <QRScanner
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onScan={(id) => {
+                    // Try to match by ID or Internal ID
+                    const found = assets.find(a => a.id === id || a.internalId === id);
+                    if (found) {
+                        setDrawerAsset(found);
+                        showToast(`¡Activo detectado: ${found.name}!`, 'success');
+                    } else {
+                        showToast(`Código desconocido: ${id}`, 'error');
+                    }
+                }}
+                assets={assets}
+            />
 
             <NotificationCenter
                 isOpen={isNotificationOpen}
