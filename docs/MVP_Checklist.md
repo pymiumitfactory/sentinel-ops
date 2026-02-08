@@ -28,5 +28,5 @@ Este documento rastrea el progreso técnico para cumplir con el alcance definido
 - [ ] **Reporte ROI**: Widget específico que calcule "Horas de Parada Evitadas" vs "Costo".
 
 ## 🔴 5. Despliegue y Validación
-- [ ] **CI/CD**: Configurar Vercel/Netlify para despliegue automático desde GitHub.
+- [x] **CI/CD**: Configurar Vercel/Netlify para despliegue automático desde GitHub.
 - [ ] **Pruebas de Campo**: Validación de UX con un usuario real (simulado) en móvil.

@@ -45,7 +45,12 @@ const App: React.FC = () => {
         runSync();
 
         // Listen for online/offline status
-        const handleOnline = () => { setIsOnline(true); runSync(); };
+        const handleOnline = async () => {
+            setIsOnline(true);
+            await runSync();
+            // Refresh data after sync to show updated status (e.g. Asset turning Red)
+            fetchData();
+        };
         const handleOffline = () => setIsOnline(false);
 
         window.addEventListener('online', handleOnline);
