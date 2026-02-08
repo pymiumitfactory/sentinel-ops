@@ -10,7 +10,7 @@ Este documento rastrea el progreso técnico para cumplir con el alcance definido
 
 ## 🟡 2. Módulo de Gestión de Activos (Web Admin)
 - [x] **Listado de Flota**: Visualización de tarjetas con estado (Verde/Amarillo/Rojo). *(Integrado con Supabase)*
-- [ ] **Detalle de Activo**: Vista individual con historial completo de mantenimientos.
+- [x] **Detalle de Activo**: Vista individual con historial completo de mantenimientos. *(Implementado)*
 - [ ] **Gestión (CRUD)**: Formularios para Agregar/Editar máquinas y asignarles criticidad.
 - [ ] **Generación de QR**: Botón para imprimir el código QR que se pegará en la máquina.
 
@@ -30,4 +30,9 @@ Este documento rastrea el progreso técnico para cumplir con el alcance definido
 
 ## 🔴 5. Despliegue y Validación
 - [x] **CI/CD**: Configurar Vercel/Netlify para despliegue automático desde GitHub.
-- [ ] **Pruebas de Campo**: Validación de UX con un usuario real (simulado) en móvil.
+- [x] **Pruebas de Campo**: Validación de UX con un usuario real (simulado) en móvil.
+
+## 🔵 6. UX & Polish (Mejoras de Experiencia)
+- [x] **Industrial Dark Theme**: Diseño de alto contraste para visibilidad en campo.
+- [x] **Toast Notifications**: Reemplazo de alertas nativas por notificaciones no intrusivas.
+- [x] **Robusto Offline (Stale-While-Revalidate)**: Carga instantánea desde caché local.

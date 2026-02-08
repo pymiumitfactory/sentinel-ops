@@ -6,7 +6,10 @@ import type { Asset, Alert, MaintenanceLog } from '../types';
 export interface SentinelDataService {
     getAssets(): Promise<Asset[]>;
     getAssetById(id: string): Promise<Asset | undefined>;
-    getAssetLogs(assetId: string): Promise<MaintenanceLog[]>; // New method
+    createAsset(asset: Omit<Asset, 'id' | 'currentHours' | 'status' | 'lastServiceDate'>): Promise<Asset>; // New
+    updateAsset(id: string, updates: Partial<Asset>): Promise<Asset>; // New
+    deleteAsset(id: string): Promise<void>; // New
+    getAssetLogs(assetId: string): Promise<MaintenanceLog[]>;
     getAlerts(): Promise<Alert[]>;
     submitLog(log: Omit<MaintenanceLog, 'id' | 'createdAt'>): Promise<MaintenanceLog>;
     seedData(): Promise<void>;
@@ -17,7 +20,101 @@ export interface SentinelDataService {
 // Supabase Implementation
 class SupabaseSentinelService implements SentinelDataService {
 
-    // ... existing methods ...
+    // ... (getAssets remains same) ...
+    // ... (getAssetById remains same) ...
+
+    async createAsset(asset: Omit<Asset, 'id' | 'currentHours' | 'status' | 'lastServiceDate'>): Promise<Asset> {
+        // Get org_id (assuming single org for MVP)
+        const { data: orgData } = await supabase.from('organizations').select('id').single();
+        if (!orgData) throw new Error('No organization found');
+
+        const payload = {
+            org_id: orgData.id,
+            name: asset.name,
+            internal_id: asset.internalId,
+            category: asset.category,
+            brand: asset.brand,
+            model: asset.model,
+            location: asset.location,
+            status: 'active', // Default
+            current_hours: 0
+        };
+
+        const { data, error } = await supabase
+            .from('assets')
+            .insert(payload)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error creating asset:', error);
+            throw error;
+        }
+
+        return {
+            id: data.id,
+            name: data.name,
+            internalId: data.internal_id,
+            category: data.category,
+            brand: data.brand,
+            model: data.model,
+            currentHours: data.current_hours,
+            status: data.status,
+            lastServiceDate: data.last_service_date,
+            location: data.location
+        };
+    }
+
+    async updateAsset(id: string, updates: Partial<Asset>): Promise<Asset> {
+        const payload: any = {};
+        if (updates.name) payload.name = updates.name;
+        if (updates.internalId) payload.internal_id = updates.internalId;
+        if (updates.category) payload.category = updates.category;
+        if (updates.brand) payload.brand = updates.brand;
+        if (updates.model) payload.model = updates.model;
+        if (updates.location) payload.location = updates.location;
+        if (updates.currentHours !== undefined) payload.current_hours = updates.currentHours;
+        if (updates.status) payload.status = updates.status;
+
+        const { data, error } = await supabase
+            .from('assets')
+            .update(payload)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating asset:', error);
+            throw error;
+        }
+
+        return {
+            id: data.id,
+            name: data.name,
+            internalId: data.internal_id,
+            category: data.category,
+            brand: data.brand,
+            model: data.model,
+            currentHours: data.current_hours,
+            status: data.status,
+            lastServiceDate: data.last_service_date,
+            location: data.location
+        };
+    }
+
+    async deleteAsset(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('assets')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting asset:', error);
+            throw error;
+        }
+    }
+
+    // ... (getAssetLogs starts here) ...
     async getAssets(): Promise<Asset[]> {
         const { data, error } = await supabase
             .from('assets')

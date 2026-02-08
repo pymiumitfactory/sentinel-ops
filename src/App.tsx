@@ -5,6 +5,7 @@ import { ChecklistForm } from './components/ChecklistForm';
 import { AssetHistory } from './components/AssetHistory';
 import { TrendChart } from './components/TrendChart';
 import { useToast } from './components/Toast';
+import { AssetForm } from './components/AssetForm';
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
@@ -16,6 +17,8 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null); // For Checklist
     const [historyAsset, setHistoryAsset] = useState<Asset | null>(null);   // For History
+    const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+    const [isCreatingAsset, setIsCreatingAsset] = useState(false);
 
     const [pendingCount, setPendingCount] = useState(0);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -76,6 +79,41 @@ const App: React.FC = () => {
         }
     };
 
+    // CRUD Handlers
+    const handleSaveAsset = async (data: Partial<Asset>) => {
+        try {
+            if (editingAsset) {
+                // Update
+                const updated = await api.updateAsset(editingAsset.id, data);
+                showToast(`Activo actualizado: ${updated.name}`, 'success');
+            } else {
+                // Create
+                // @ts-ignore - Create expects less fields but form provides partial
+                const created = await api.createAsset(data);
+                showToast(`Nuevo activo creado: ${created.name}`, 'success');
+            }
+            fetchData(); // Refresh list
+            setIsCreatingAsset(false);
+            setEditingAsset(null);
+        } catch (e) {
+            console.error(e);
+            showToast('Error al guardar activo', 'error');
+        }
+    };
+
+    const handleDeleteAsset = async (id: string) => {
+        try {
+            await api.deleteAsset(id);
+            showToast('Activo eliminado correctamente', 'success');
+            fetchData(); // Refresh list
+            setIsCreatingAsset(false);
+            setEditingAsset(null);
+        } catch (e) {
+            console.error(e);
+            showToast('Error al eliminar activo', 'error');
+        }
+    };
+
     useEffect(() => {
         fetchData();
         runSync();
@@ -102,21 +140,41 @@ const App: React.FC = () => {
         };
     }, []);
 
-    if (loading) return <div style={{ color: 'white', padding: '2rem' }}>Cargando Centinela...</div>;
+    if (loading && assets.length === 0) return <div style={{ color: 'white', padding: '2rem' }}>Cargando Centinela...</div>;
 
     return (
-        <div className="dashboard">
+        <div className="app-container">
             <header className="header">
-                <div className="logo">SENTINEL OPS</div>
+                <div className="logo">Sentinel Ops <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>MVP</span></div>
                 <div className="status-indicator">
-                    {!isOnline ? (
-                        <span className="badge status-down">Offline ({pendingCount} pendientes)</span>
-                    ) : pendingCount > 0 ? (
-                        <span className="badge status-warning">Sincronizando ({pendingCount})...</span>
+                    <span
+                        className={`dot ${isOnline ? 'online' : 'offline'}`}
+                        style={{ marginRight: '0.5rem' }}
+                    ></span>
+                    {pendingCount > 0 ? (
+                        <span onClick={runSync} style={{ cursor: 'pointer', color: 'var(--safety-yellow)' }}>
+                            {isSyncing.current ? 'Sincronizando...' : `OFFLINE (${pendingCount}) ↻`}
+                        </span>
                     ) : (
-                        <span className="badge status-active">Online / Sync OK</span>
+                        <span style={{ color: isOnline ? 'var(--status-ok)' : 'var(--text-secondary)' }}>
+                            {isOnline ? 'Conectado' : 'Sin Señal'}
+                        </span>
                     )}
                 </div>
+                {/* Add Asset Button (Desktop/Mobile) */}
+                <button
+                    onClick={() => setIsCreatingAsset(true)}
+                    style={{
+                        marginLeft: '1rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        background: 'transparent',
+                        border: '1px solid var(--safety-yellow)',
+                        color: 'var(--safety-yellow)'
+                    }}
+                >
+                    + NUEVO
+                </button>
             </header>
 
             {/* Insights Section */}
@@ -149,42 +207,53 @@ const App: React.FC = () => {
             <div className="layout-grid">
                 {/* Fleet Section */}
                 <section className="fleet-section">
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Maquinaria Activa (Minería & Agro)</h2>
-                    <div className="grid">
-                        {assets.map(asset => (
-                            <div key={asset.id} className="card">
-                                {/* ... (Asset Card Header) ... */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <h3 style={{ margin: 0 }}>{asset.name}</h3>
-                                        <code style={{ fontSize: '0.8rem', color: '#58a6ff' }}>{asset.internalId}</code>
-                                    </div>
-                                    <span className={`badge status-${asset.status}`}>{asset.status}</span>
-                                </div>
+                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        Maquinaria Activa
+                    </h2>
 
-                                <div style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{ color: '#8b949e' }}>Horas de Uso:</span>
-                                        <span>{asset.currentHours} h</span>
+                    {loading ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: '#8b949e' }}>
+                            <div className="spinner"></div>
+                            <p>Cargando flota...</p>
+                        </div>
+                    ) : (
+                        <div className="grid">
+                            {assets.map(asset => (
+                                <div key={asset.id} className="card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div>
+                                            <h3 style={{ margin: 0, cursor: 'pointer' }} onClick={() => setEditingAsset(asset)}>
+                                                {asset.name} <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>✎</span>
+                                            </h3>
+                                            <code style={{ fontSize: '0.8rem', color: 'var(--safety-orange)' }}>{asset.internalId}</code>
+                                        </div>
+                                        <span className={`badge status-${asset.status}`}>{asset.status}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#8b949e' }}>Ubicación:</span>
-                                        <span>{asset.location}</span>
-                                    </div>
-                                </div>
 
-                                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem' }}>
-                                    <button onClick={() => setSelectedAsset(asset)} style={{ flex: 1 }}>Checklist</button>
-                                    <button
-                                        onClick={() => setHistoryAsset(asset)}
-                                        style={{ backgroundColor: '#21262d', border: '1px solid #30363d' }}
-                                    >
-                                        Historial
-                                    </button>
+                                    <div style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Horas:</span>
+                                            <span style={{ fontWeight: 'bold' }}>{asset.currentHours} h</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Ubicación:</span>
+                                            <span>{asset.location}</span>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem' }}>
+                                        <button onClick={() => setSelectedAsset(asset)} style={{ flex: 1 }}>Checklist</button>
+                                        <button
+                                            onClick={() => setHistoryAsset(asset)}
+                                            style={{ border: '1px solid var(--border-color)' }}
+                                        >
+                                            Historial
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* Alerts Sidebar (remains same) */}
@@ -208,6 +277,15 @@ const App: React.FC = () => {
             </div>
 
             {/* Modals */}
+            {(isCreatingAsset || editingAsset) && (
+                <AssetForm
+                    asset={editingAsset || undefined}
+                    onClose={() => { setIsCreatingAsset(false); setEditingAsset(null); }}
+                    onSave={handleSaveAsset}
+                    onDelete={editingAsset ? handleDeleteAsset : undefined}
+                />
+            )}
+
             {selectedAsset && (
                 <ChecklistForm
                     asset={selectedAsset}
