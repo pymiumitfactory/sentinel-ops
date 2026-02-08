@@ -1,32 +1,20 @@
 :root {
-    /* Industrial Colors */
-    --bg-dark: #121212;
-    --bg-card: #1E1E1E;
-    --bg-header: #263238;
-    /* Blue Grey Dark */
+    /* Industrial Colors - High Contrast */
+    --bg-dark: #0D1117;
+    /* GitHub Dark Dimmed base */
+    --bg-card: #161B22;
+    /* Lighter than bg */
+    --bg-header: #161B22;
 
-    --text-primary: #ECEFF1;
-    --text-secondary: #B0BEC5;
+    --text-primary: #F0F6FC;
+    --text-secondary: #8B949E;
 
-    /* Safety Accents */
+    /* Saftey Accents - POP Colors */
     --safety-yellow: #FFD600;
-    /* Main Accent */
+    /* Vivid Yellow */
     --safety-orange: #FF6D00;
-    --industrial-blue: #0277BD;
 
-    /* Status Colors */
-    --status-ok: #00C853;
-    /* Vivid Green */
-    --status-warning: #FFAB00;
-    /* Amber */
-    --status-down: #D50000;
-    /* Red */
-
-    /* UI Elements */
-    --border-color: #37474F;
-    --border-radius: 4px;
-    /* More squared, rugged look */
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --border-color: #30363D;
 }
 
 body {
@@ -37,33 +25,35 @@ body {
     padding: 0;
 }
 
-/* Header Override */
+/* Header with Heavy Industrial Accent */
 .header {
-    background-color: var(--bg-header);
-    border-bottom: 3px solid var(--safety-yellow);
-    /* Industrial accent */
+    background: var(--bg-header);
+    border-bottom: 4px solid var(--safety-yellow);
+    /* Thicker line */
     padding: 1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .logo {
     font-weight: 800;
     font-size: 1.5rem;
     letter-spacing: 1px;
-    color: var(--safety-yellow);
+    color: var(--text-primary);
     text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 214, 0, 0.3);
+    /* Glow effect */
 }
 
-/* Card Styling - Rugged */
+/* Cards with Depth */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    border-radius: 4px;
     padding: 1.25rem;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s, border-color 0.2s;
 }
 
@@ -77,7 +67,7 @@ button {
     color: var(--text-primary);
     border: 1px solid var(--border-color);
     padding: 0.8rem 1.2rem;
-    border-radius: var(--border-radius);
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.95rem;
@@ -92,22 +82,48 @@ button:hover {
     border-color: var(--safety-yellow);
 }
 
-/* Primary Action Buttons */
+/* Primary Action Button (Checklist) - SOLID YELLOW */
 button[style*="flex: 1"] {
-    background-color: var(--safety-yellow);
-    color: #000;
-    /* Black text on yellow */
+    background-color: var(--safety-yellow) !important;
+    color: #000000 !important;
+    font-weight: 800;
     border: none;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 button[style*="flex: 1"]:hover {
-    background-color: #FFEA00;
+    background-color: #FFEA00 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 234, 0, 0.4);
+    /* Glow on hover */
 }
 
-/* Status Badges */
+/* Secondary Button (History) */
+button[style*="border: 1px solid"] {
+    background-color: transparent !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+button[style*="border: 1px solid"]:hover {
+    border-color: var(--safety-yellow) !important;
+    color: var(--safety-yellow) !important;
+}
+
+/* Machine Titles */
+.card h3 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Status Badges - Fill style */
 .badge {
-    padding: 0.4rem 0.8rem;
+    padding: 4px 10px;
     border-radius: 4px;
+    /* Industrial square-ish */
     font-size: 0.8rem;
     font-weight: bold;
     text-transform: uppercase;
@@ -115,21 +131,21 @@ button[style*="flex: 1"]:hover {
 }
 
 .status-active {
-    background-color: rgba(0, 200, 83, 0.2);
-    color: var(--status-ok);
-    border: 1px solid var(--status-ok);
+    background: #238636;
+    color: white;
+    border: none;
 }
 
 .status-warning {
-    background-color: rgba(255, 171, 0, 0.2);
-    color: var(--status-warning);
-    border: 1px solid var(--status-warning);
+    background: #D29922;
+    color: black;
+    border: none;
 }
 
 .status-down {
-    background-color: rgba(213, 0, 0, 0.2);
-    color: var(--status-down);
-    border: 1px solid var(--status-down);
+    background: #DA3633;
+    color: white;
+    border: none;
 }
 
 /* Modal Override */
@@ -139,15 +155,15 @@ button[style*="flex: 1"]:hover {
     border-top: 4px solid var(--safety-yellow);
 }
 
-/* Inputs */
+/* Input Fields */
 input,
 select,
 textarea {
-    background: #263238;
+    background: #0D1117;
     border: 1px solid var(--border-color);
     color: white;
     padding: 0.8rem;
-    border-radius: var(--border-radius);
+    border-radius: 4px;
     width: 100%;
     font-size: 1rem;
     margin-bottom: 1rem;
@@ -157,6 +173,7 @@ input:focus,
 select:focus {
     outline: none;
     border-color: var(--safety-yellow);
+    box-shadow: 0 0 0 2px rgba(255, 214, 0, 0.2);
 }
 
 /* Alerts Section */
