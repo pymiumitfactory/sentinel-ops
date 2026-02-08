@@ -6,9 +6,10 @@ import { AssetHistory } from './components/AssetHistory';
 import { TrendChart } from './components/TrendChart';
 import { useToast } from './components/Toast';
 import { AssetForm } from './components/AssetForm';
+import { NotificationCenter } from './components/NotificationCenter';
+import { AssetDrawer } from './components/AssetDrawer';
 import {
-    ClockIcon, MapPinIcon, ClipboardCheckIcon, HistoryIcon,
-    EditIcon, PlusIcon, AlertTriangleIcon
+    ClockIcon, MapPinIcon, PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon
 } from './components/Icons';
 import './styles/main.css';
 import './styles/responsive.css';
@@ -16,49 +17,50 @@ import './styles/animations.css';
 import './styles/industrial-theme.css';
 
 const App: React.FC = () => {
+    // State
     const [assets, setAssets] = useState<Asset[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null); // For Checklist
-    const [historyAsset, setHistoryAsset] = useState<Asset | null>(null);   // For History
+
+    // UI State
+    const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+    // Legacy Modals (Triggered from Drawer)
+    const [checklistAsset, setChecklistAsset] = useState<Asset | null>(null);
+    const [historyAsset, setHistoryAsset] = useState<Asset | null>(null);
     const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [isCreatingAsset, setIsCreatingAsset] = useState(false);
 
+    // Sync State
     const [pendingCount, setPendingCount] = useState(0);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const isSyncing = useRef(false);
     const { showToast } = useToast();
 
+    // -- Data Fetching Logic (Same as before) --
     const fetchData = async () => {
-        // 1. Stale-While-Revalidate: Load cache immediately
         const cachedAssets = localStorage.getItem('cached_assets');
         const cachedAlerts = localStorage.getItem('cached_alerts');
 
         if (cachedAssets) {
             setAssets(JSON.parse(cachedAssets));
-            setLoading(false); // Show UI instantly
+            setLoading(false);
         }
         if (cachedAlerts) setAlerts(JSON.parse(cachedAlerts));
 
-        // 2. Try fetching fresh data
         try {
             const [assetsData, alertsData] = await Promise.all([
                 api.getAssets(),
                 api.getAlerts()
             ]);
-
-            // Update state with fresh data
             setAssets(assetsData);
             setAlerts(alertsData);
             setLoading(false);
-
-            // Update cache
             localStorage.setItem('cached_assets', JSON.stringify(assetsData));
             localStorage.setItem('cached_alerts', JSON.stringify(alertsData));
-
         } catch (error) {
             console.warn('Network error, keeping cached data.', error);
-            // If we have no cache and network failed, stop loading
             if (!cachedAssets) setLoading(false);
         }
     };
@@ -66,15 +68,12 @@ const App: React.FC = () => {
     const runSync = async () => {
         if (isSyncing.current) return;
         isSyncing.current = true;
-
         try {
             if (navigator.onLine) {
                 try {
                     const synced = await api.syncPendingLogs();
-                    if (synced > 0) showToast(`Sincronizados ${synced} reportes offline`, 'success');
-                } catch (e) {
-                    console.error(e);
-                }
+                    if (synced > 0) showToast(`Sincronizados ${synced} reportes`, 'success');
+                } catch (e) { console.error(e); }
             }
             const count = await api.getPendingLogsCount();
             setPendingCount(count);
@@ -83,64 +82,13 @@ const App: React.FC = () => {
         }
     };
 
-    // CRUD Handlers
-    const handleSaveAsset = async (data: Partial<Asset>) => {
-        try {
-            if (editingAsset) {
-                // Update
-                const updated = await api.updateAsset(editingAsset.id, data);
-                showToast(`Activo actualizado: ${updated.name}`, 'success');
-            } else {
-                // Create
-                // @ts-ignore - Create expects less fields but form provides partial
-                const created = await api.createAsset(data);
-                showToast(`Nuevo activo creado: ${created.name}`, 'success');
-            }
-            fetchData(); // Refresh list
-            setIsCreatingAsset(false);
-            setEditingAsset(null);
-        } catch (e) {
-            console.error(e);
-            showToast('Error al guardar activo', 'error');
-        }
-    };
-
-    const handleDeleteAsset = async (id: string) => {
-        try {
-            await api.deleteAsset(id);
-            showToast('Activo eliminado correctamente', 'success');
-            fetchData(); // Refresh list
-            setIsCreatingAsset(false);
-            setEditingAsset(null);
-        } catch (e) {
-            console.error(e);
-            showToast('Error al eliminar activo', 'error');
-        }
-    };
-
     useEffect(() => {
         fetchData();
-
-        // Background Sync Interval (Every 60s)
-        const syncInterval = setInterval(() => {
-            if (navigator.onLine) runSync();
-        }, 60000);
-
-        // Network Listeners
-        const handleOnline = () => {
-            setIsOnline(true);
-            showToast('Conexión recuperada', 'success');
-            runSync();
-            fetchData(); // Refresh UI
-        };
-        const handleOffline = () => {
-            setIsOnline(false);
-            showToast('Modo Offline activado', 'error');
-        };
-
+        const syncInterval = setInterval(() => { if (navigator.onLine) runSync(); }, 60000);
+        const handleOnline = () => { setIsOnline(true); runSync(); fetchData(); };
+        const handleOffline = () => { setIsOnline(false); showToast('Modo Offline', 'error'); };
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
-
         return () => {
             clearInterval(syncInterval);
             window.removeEventListener('online', handleOnline);
@@ -148,184 +96,163 @@ const App: React.FC = () => {
         };
     }, []);
 
-    if (loading && assets.length === 0) return <div style={{ color: 'white', padding: '2rem' }}>Cargando Centinela...</div>;
+    // -- Action Handlers --
+    const handleResolveAlert = async (id: string) => {
+        // Mock resolve for MVP
+        const newAlerts = alerts.map(a => a.id === id ? { ...a, isResolved: true } : a);
+        setAlerts(newAlerts);
+        localStorage.setItem('cached_alerts', JSON.stringify(newAlerts));
+        showToast('Alerta resuelta', 'success');
+    };
+
+    const handleSaveAsset = async (data: Partial<Asset>) => {
+        try {
+            if (editingAsset) {
+                await api.updateAsset(editingAsset.id, data);
+                showToast('Activo actualizado', 'success');
+            } else {
+                // @ts-ignore
+                await api.createAsset(data);
+                showToast('Activo creado', 'success');
+            }
+            fetchData();
+            setIsCreatingAsset(false);
+            setEditingAsset(null);
+            setDrawerAsset(null); // Close drawer if open
+        } catch (e) {
+            console.error(e);
+            showToast('Error al guardar', 'error');
+        }
+    };
+
+    const handleDeleteAsset = async (id: string) => {
+        try {
+            await api.deleteAsset(id);
+            showToast('Activo eliminado', 'success');
+            fetchData();
+            setEditingAsset(null);
+            setDrawerAsset(null);
+        } catch (e) { console.error(e); showToast('Error al eliminar', 'error'); }
+    };
 
     return (
         <div className="app-container">
+            {/* -- Minimal Header -- */}
             <header className="header">
                 <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <AlertTriangleIcon size={24} color="var(--safety-yellow)" />
-                    Sentinel Ops <span style={{ fontSize: '0.8rem', color: '#8b949e', marginLeft: '0.2rem' }}>BETA</span>
+                    Sentinel Ops
                 </div>
-                <div className="status-indicator">
-                    <span
-                        className={`dot ${isOnline ? 'online' : 'offline'}`}
-                        style={{ marginRight: '0.5rem' }}
-                    ></span>
-                    {pendingCount > 0 ? (
-                        <span onClick={runSync} style={{ cursor: 'pointer', color: 'var(--safety-yellow)' }}>
-                            {isSyncing.current ? 'Sincronizando...' : `OFFLINE (${pendingCount}) ↻`}
-                        </span>
-                    ) : (
-                        <span style={{ color: isOnline ? 'var(--status-ok)' : 'var(--text-secondary)' }}>
-                            {isOnline ? 'Conectado' : 'Sin Señal'}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {/* Offline Indicator (only if offline/syncing) */}
+                    {(pendingCount > 0 || !isOnline) && (
+                        <span
+                            onClick={runSync}
+                            style={{
+                                fontSize: '0.8rem',
+                                color: !isOnline ? 'var(--text-secondary)' : 'var(--safety-orange)',
+                                border: '1px solid currentColor',
+                                padding: '2px 8px',
+                                borderRadius: '12px'
+                            }}
+                        >
+                            {!isOnline ? 'OFFLINE' : `SYNC (${pendingCount})`}
                         </span>
                     )}
+
+                    {/* Notification Bell */}
+                    <button
+                        className="icon-btn"
+                        onClick={() => setIsNotificationOpen(true)}
+                        style={{ position: 'relative', background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
+                    >
+                        <BellIcon size={24} />
+                        {alerts.filter(a => !a.isResolved).length > 0 && (
+                            <span style={{
+                                position: 'absolute', top: -2, right: -2,
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: 'var(--status-down)', border: '2px solid var(--bg-primary)'
+                            }}></span>
+                        )}
+                    </button>
                 </div>
-                {/* Desktop "New Asset" Button */}
-                <button
-                    className="desktop-only-btn"
-                    onClick={() => setIsCreatingAsset(true)}
-                    style={{
-                        marginLeft: '1rem',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                        background: 'transparent',
-                        border: '1px solid var(--safety-yellow)',
-                        color: 'var(--safety-yellow)',
-                        display: window.innerWidth > 768 ? 'block' : 'none'
-                    }}
-                >
-                    + NUEVO
-                </button>
             </header>
 
-            <section className="chart-section" style={{ marginBottom: '2rem' }}>
+            {/* -- Main Feed -- */}
+            <main style={{ paddingBottom: '80px' }}> {/* Space for FAB */}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', color: '#8b949e', margin: 0 }}>Análisis de Salud de Flota</h2>
-                    {assets.length === 0 && (
-                        <button
-                            onClick={() => api.seedData()}
-                            style={{ backgroundColor: '#238636', color: 'white', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', fontSize: '0.9rem' }}
-                        >
-                            🌱 Inicializar Apps (Seed Demo)
+                    <h2 style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>Flota Activa</h2>
+                    {assets.length === 0 && !loading && (
+                        <button onClick={() => api.seedData()} style={{ fontSize: '0.8rem', color: 'var(--accent-color)', background: 'transparent', border: 'none' }}>
+                            + Cargar Datos Demo
                         </button>
                     )}
                 </div>
-                {assets.length > 0 ? (
-                    <div className="grid">
-                        <TrendChart label="Consumo Promedio de Combustible" data={[45, 48, 42, 50, 55, 60, 58]} />
-                        <TrendChart label="Horas de Operación / Día" data={[8, 10, 12, 11, 9, 8, 11]} color="#58a6ff" />
-                        <TrendChart label="Detección de Vibración G (Promedio)" data={[0.2, 0.22, 0.25, 0.4, 0.35, 0.5, 0.45]} color="#d29922" />
-                    </div>
+
+                {loading && assets.length === 0 ? (
+                    <div style={{ padding: '4rem', textAlign: 'center' }}><div className="spinner"></div></div>
                 ) : (
-                    <div className="card" style={{ padding: '3rem', textAlign: 'center', color: '#8b949e' }}>
-                        <p>No hay activos registrados. Inicializa la base de datos para comenzar.</p>
-                    </div>
-                )}
-            </section>
-
-            <div className="layout-grid">
-                {/* Fleet Section */}
-                <section className="fleet-section">
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        Maquinaria Activa
-                    </h2>
-
-                    {loading ? (
-                        <div style={{ padding: '4rem', textAlign: 'center', color: '#8b949e' }}>
-                            <div className="spinner"></div>
-                            <p style={{ marginTop: '1rem' }}>Cargando flota...</p>
-                        </div>
-                    ) : (
-                        <div className="grid">
-                            {assets.map(asset => (
-                                <div key={asset.id} className="card">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <h3 style={{ margin: 0, lineHeight: 1 }}>{asset.name}</h3>
-                                                <button className="edit-icon-btn" onClick={() => setEditingAsset(asset)}>
-                                                    <EditIcon size={16} />
-                                                </button>
-                                            </div>
-                                            <code style={{ fontSize: '0.8rem', color: 'var(--safety-orange)' }}>{asset.internalId}</code>
-                                        </div>
-                                        <span className={`badge status-${asset.status}`}>{asset.status}</span>
-                                    </div>
-
-                                    <div style={{ padding: '0.5rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-                                        <div className="meta-row">
-                                            <ClockIcon size={18} />
-                                            <span>{asset.currentHours} horas</span>
-                                        </div>
-                                        <div className="meta-row">
-                                            <MapPinIcon size={18} />
+                    <div className="grid">
+                        {assets.map(asset => (
+                            <div
+                                key={asset.id}
+                                className="card asset-card-minimal"
+                                onClick={() => setDrawerAsset(asset)}
+                                style={{ cursor: 'pointer', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div className={`status-dot-large status-${asset.status}`} style={{ width: 12, height: 12, borderRadius: '50%', background: 'currentColor' }}></div>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1rem' }}>{asset.name}</h3>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                            <LocationIcon size={12} />
                                             <span>{asset.location}</span>
                                         </div>
                                     </div>
-
-                                    <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                        <button onClick={() => setSelectedAsset(asset)} style={{ flex: 2 }}>
-                                            <div className="btn-content">
-                                                <ClipboardCheckIcon size={20} color="#000" />
-                                                CHECKLIST
-                                            </div>
-                                        </button>
-                                        <button
-                                            onClick={() => setHistoryAsset(asset)}
-                                            style={{ flex: 1, border: '1px solid var(--border-color)', background: 'transparent' }}
-                                        >
-                                            <div className="btn-content">
-                                                <HistoryIcon size={20} />
-                                            </div>
-                                        </button>
-                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* Alerts Sidebar */}
-                <section className="alerts-section">
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#f85149', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <AlertTriangleIcon color="#f85149" /> Alertas Críticas ({alerts.length})
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {alerts.map(alert => (
-                            <div key={alert.id} className="card" style={{ borderColor: '#f85149' }}>
-                                <h3 style={{ margin: 0, fontSize: '1rem' }}>{alert.description}</h3>
-                                <p style={{ color: '#8b949e', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                                    Activo: <strong>{assets.find(a => a.id === alert.assetId)?.name}</strong>
-                                </p>
-                                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                    <button style={{ backgroundColor: '#f85149', color: 'white', fontSize: '0.8rem', padding: '0.5rem' }}>Resolver</button>
-                                    <button style={{ backgroundColor: '#21262d', color: '#8b949e', fontSize: '0.8rem', padding: '0.5rem', border: '1px solid #30363d' }}>Ignorar</button>
+                                <div style={{ color: 'var(--text-secondary)' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>›</span>
                                 </div>
                             </div>
                         ))}
                     </div>
-                </section>
-            </div>
+                )}
+            </main>
 
-            {/* Floating Action Button for New Asset */}
+            {/* FAB */}
             <button
                 className="fab-button"
                 onClick={() => setIsCreatingAsset(true)}
-                title="Nuevo Activo"
             >
                 <PlusIcon size={32} color="#000" />
             </button>
 
-            {/* Modals */}
-            {(isCreatingAsset || editingAsset) && (
-                <AssetForm
-                    asset={editingAsset || undefined}
-                    onClose={() => { setIsCreatingAsset(false); setEditingAsset(null); }}
-                    onSave={handleSaveAsset}
-                    onDelete={editingAsset ? handleDeleteAsset : undefined}
-                />
-            )}
+            {/* -- Drawers & Modals -- */}
 
-            {selectedAsset && (
+            <NotificationCenter
+                isOpen={isNotificationOpen}
+                onClose={() => setIsNotificationOpen(false)}
+                alerts={alerts}
+                assets={assets}
+                onResolve={handleResolveAlert}
+            />
+
+            <AssetDrawer
+                asset={drawerAsset}
+                onClose={() => setDrawerAsset(null)}
+                onChecklist={(a) => { setDrawerAsset(null); setChecklistAsset(a); }}
+                onHistory={(a) => { setDrawerAsset(null); setHistoryAsset(a); }}
+                onEdit={(a) => { setDrawerAsset(null); setEditingAsset(a); }}
+            />
+
+            {/* Sub-Modals (Triggered from Drawer) */}
+            {checklistAsset && (
                 <ChecklistForm
-                    asset={selectedAsset}
-                    onClose={() => setSelectedAsset(null)}
-                    onSuccess={() => {
-                        showToast('Reporte guardado exitosamente', 'success');
-                        fetchData();
-                    }}
+                    asset={checklistAsset}
+                    onClose={() => setChecklistAsset(null)}
+                    onSuccess={() => { showToast('Checklist guardado', 'success'); fetchData(); }}
                 />
             )}
 
@@ -333,6 +260,15 @@ const App: React.FC = () => {
                 <AssetHistory
                     asset={historyAsset}
                     onClose={() => setHistoryAsset(null)}
+                />
+            )}
+
+            {(isCreatingAsset || editingAsset) && (
+                <AssetForm
+                    asset={editingAsset || undefined}
+                    onClose={() => { setIsCreatingAsset(false); setEditingAsset(null); }}
+                    onSave={handleSaveAsset}
+                    onDelete={editingAsset ? handleDeleteAsset : undefined}
                 />
             )}
         </div>
