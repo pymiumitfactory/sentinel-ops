@@ -26,7 +26,7 @@ class SupabaseSentinelService implements SentinelDataService {
 
         if (error) {
             console.error('Error fetching assets:', error);
-            return [];
+            throw error; // Throw to trigger offline cache in App.tsx
         }
 
         return (data || []).map((row: any) => ({
@@ -100,7 +100,7 @@ class SupabaseSentinelService implements SentinelDataService {
 
         if (error) {
             console.error('Error fetching alerts:', error);
-            return [];
+            throw error; // Throw so App can use cached alerts
         }
 
         return (data || []).map((row: any) => ({

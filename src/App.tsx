@@ -22,31 +22,36 @@ const App: React.FC = () => {
     const { showToast } = useToast();
 
     const fetchData = async () => {
+        // 1. Stale-While-Revalidate: Load cache immediately
+        const cachedAssets = localStorage.getItem('cached_assets');
+        const cachedAlerts = localStorage.getItem('cached_alerts');
+
+        if (cachedAssets) {
+            setAssets(JSON.parse(cachedAssets));
+            setLoading(false); // Show UI instantly
+        }
+        if (cachedAlerts) setAlerts(JSON.parse(cachedAlerts));
+
+        // 2. Try fetching fresh data
         try {
-            // Try fetching fresh data first
             const [assetsData, alertsData] = await Promise.all([
                 api.getAssets(),
                 api.getAlerts()
             ]);
 
+            // Update state with fresh data
             setAssets(assetsData);
             setAlerts(alertsData);
             setLoading(false);
 
-            // Cache for offline use
+            // Update cache
             localStorage.setItem('cached_assets', JSON.stringify(assetsData));
             localStorage.setItem('cached_alerts', JSON.stringify(alertsData));
 
         } catch (error) {
-            console.warn('Network error, loading from cache...', error);
-
-            // Fallback to cache
-            const cachedAssets = localStorage.getItem('cached_assets');
-            const cachedAlerts = localStorage.getItem('cached_alerts');
-
-            if (cachedAssets) setAssets(JSON.parse(cachedAssets));
-            if (cachedAlerts) setAlerts(JSON.parse(cachedAlerts));
-            setLoading(false);
+            console.warn('Network error, keeping cached data.', error);
+            // If we have no cache and network failed, stop loading
+            if (!cachedAssets) setLoading(false);
         }
     };
 
