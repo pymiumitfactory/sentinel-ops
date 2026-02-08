@@ -363,7 +363,7 @@ class SupabaseSentinelService implements SentinelDataService {
         try {
             if (isOffline) throw new Error('Offline Mode');
 
-            const { user, orgId } = await this._getUserContext();
+            const { user } = await this._getUserContext();
 
             let photoUrl = null;
             if (payload.photoFile) {
@@ -403,11 +403,12 @@ class SupabaseSentinelService implements SentinelDataService {
 
     // -- Auth Methods --
     async signIn(email: string, password: string) {
-        return await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        return { user: data.user, error };
     }
 
     async signOut() {
-        return await supabase.auth.signOut();
+        await supabase.auth.signOut();
     }
 
     async getCurrentUser() {
