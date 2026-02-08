@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fleet Operations Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#d39b22",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#201c12",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for rugged look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #201c12; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #453b26; 
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d39b22; 
+        }
+
+        .rugged-border {
+            border: 1px solid #453b26;
+        }
+
+        /* SVG Donut Chart Animation */
+        .chart-ring {
+            transition: stroke-dasharray 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-50 font-display overflow-x-hidden">
+<div class="relative flex min-h-screen w-full flex-col group/design-root">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#453b26] bg-[#211c12]/95 backdrop-blur px-6 py-3 shadow-md">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 text-primary">
+<span class="material-symbols-outlined text-[32px]">local_shipping</span>
+</div>
+<div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">FLEET<span class="text-primary">OPS</span></h2>
+<div class="flex items-center gap-2">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+</span>
+<span class="text-[#c5b696] text-xs font-mono uppercase">System Online</span>
+</div>
+</div>
+</div>
+<!-- Search & Actions -->
+<div class="flex flex-1 justify-end gap-6 items-center">
+<div class="hidden md:flex relative w-64">
+<input class="w-full bg-[#1a160e] border border-[#453b26] text-white text-sm rounded px-3 py-2 pl-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder-[#6b5d3a]" placeholder="Search Asset ID..." type="text"/>
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[#6b5d3a] text-[18px]">search</span>
+</div>
+<div class="flex gap-2">
+<button class="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded bg-[#2a2417] hover:bg-[#38301f] text-white transition-colors border border-[#453b26]">
+<span class="material-symbols-outlined">wifi</span>
+</button>
+<button class="relative flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded bg-[#2a2417] hover:bg-[#38301f] text-white transition-colors border border-[#453b26]">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-[#2a2417]"></span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-[#453b26]">
+<div class="text-right hidden sm:block">
+<p class="text-white text-sm font-bold">J. Connor</p>
+<p class="text-[#c5b696] text-xs">Lead Dispatch</p>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded size-10 border border-[#453b26]" data-alt="User Avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCGxFESl-udutuPfdcRycTZdN6dCMxAJJLxl6y2WvtyIJbHQAXPP-SiuxJvU6ZvT1MV3V6uO1dw44jzRjfOhhWB94Tpg_qYgd87r0V9s9h9hxZG5sag5TuJ0LtlyXUivEXxg5JrV-D2iDe0HPCDZKk93BlWsPD1NR8-BUcHPXbjOtS99sVY9OyRUqX3M1CH76kWa4JHsn0c6gM76wvxNDrEbbh38Ik8RuXp96SdXbINPmyNZDVM1GtnieJJE3juDfxujh7rND-vHg");'></div>
+</div>
+</div>
+</header>
+<main class="flex-1 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+<!-- Dashboard Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+<div>
+<h1 class="text-white text-3xl font-bold tracking-tight mb-1">THE COCKPIT</h1>
+<p class="text-[#c5b696]">Overview of Sector 7G Operations</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-[#2a2417] text-[#c5b696] hover:text-white border border-[#453b26] rounded text-sm font-medium transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    Export Report
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-[#201c12] hover:bg-[#e0a82e] rounded text-sm font-bold transition-colors shadow-[0_0_10px_rgba(211,155,34,0.3)]">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    New Asset
+                </button>
+</div>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<!-- Fleet Health (Donut) -->
+<div class="rugged-border bg-[#2a2417] p-5 rounded relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<h3 class="text-[#c5b696] text-sm font-bold uppercase tracking-wider">Fleet Health</h3>
+<span class="material-symbols-outlined text-[#c5b696]">activity_zone</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative size-20">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<!-- Background Circle -->
+<path class="text-[#38301f]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
+<!-- Green Segment (75%) -->
+<path class="text-[#10B981]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="75, 100" stroke-width="4"></path>
+<!-- Yellow Segment (Maintenance) - overlapping for visual effect or simpler implementation -->
+</svg>
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+<span class="text-white text-xs font-bold">92%</span>
+</div>
+</div>
+<div class="flex flex-col justify-center gap-1">
+<div class="flex items-center gap-2">
+<span class="size-2 rounded-full bg-[#10B981]"></span>
+<span class="text-white text-sm">Operational</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="size-2 rounded-full bg-primary"></span>
+<span class="text-white text-sm">Maintenance</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="size-2 rounded-full bg-[#6b5d3a]"></span>
+<span class="text-white text-sm">Idle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Critical Alerts -->
+<div class="rugged-border bg-red-900/20 border-red-900/50 p-5 rounded relative overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-red-500 text-[80px]">warning</span>
+</div>
+<div class="flex justify-between items-start mb-2 relative z-10">
+<h3 class="text-red-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="animate-pulse size-2 bg-red-500 rounded-full"></span>
+                        Critical Alert
+                    </h3>
+</div>
+<div class="relative z-10">
+<p class="text-white text-lg font-bold leading-tight mb-1">Engine Overheat</p>
+<p class="text-red-200 text-xs mb-3">Dozer D-9 • Sector 7G</p>
+<button class="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded uppercase tracking-wide transition-colors">
+                        Deploy Tech
+                    </button>
+</div>
+</div>
+<!-- Active Assets -->
+<div class="rugged-border bg-[#2a2417] p-5 rounded flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<h3 class="text-[#c5b696] text-sm font-bold uppercase tracking-wider">Active Assets</h3>
+<span class="material-symbols-outlined text-primary">precision_manufacturing</span>
+</div>
+<div>
+<span class="text-4xl font-bold text-white">24</span>
+<span class="text-[#c5b696] text-sm ml-1">/ 28 Total</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full mt-3">
+<div class="bg-primary h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Fuel Economy -->
+<div class="rugged-border bg-[#2a2417] p-5 rounded flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<h3 class="text-[#c5b696] text-sm font-bold uppercase tracking-wider">Est. Range</h3>
+<span class="material-symbols-outlined text-[#c5b696]">local_gas_station</span>
+</div>
+<div>
+<span class="text-4xl font-bold text-white">420</span>
+<span class="text-[#c5b696] text-sm ml-1">Hours</span>
+</div>
+<div class="flex items-center gap-2 mt-2 text-xs text-[#10B981]">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+4% vs last week</span>
+</div>
+</div>
+</div>
+<!-- Filter Toolbar -->
+<div class="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-[#453b26]">
+<span class="text-[#c5b696] text-sm font-medium uppercase tracking-wide">Filter Assets:</span>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 bg-primary/20 text-primary border border-primary/50 rounded text-xs font-bold uppercase hover:bg-primary/30 transition">
+                    All
+                </button>
+<button class="px-3 py-1.5 bg-[#2a2417] text-[#c5b696] border border-[#453b26] rounded text-xs font-bold uppercase hover:bg-[#38301f] transition">
+                    Active
+                </button>
+<button class="px-3 py-1.5 bg-[#2a2417] text-[#c5b696] border border-[#453b26] rounded text-xs font-bold uppercase hover:bg-[#38301f] transition">
+                    Maintenance
+                </button>
+<button class="px-3 py-1.5 bg-[#2a2417] text-[#c5b696] border border-[#453b26] rounded text-xs font-bold uppercase hover:bg-[#38301f] transition">
+                    Critical
+                </button>
+</div>
+<div class="ml-auto flex items-center gap-2 text-[#c5b696] text-sm">
+<span class="material-symbols-outlined text-[18px]">sort</span>
+<span>Sort by: ID</span>
+</div>
+</div>
+<!-- Asset Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Card 1: Active -->
+<div class="group relative bg-[#2a2417] rugged-border rounded hover:border-primary/50 transition-colors overflow-hidden flex flex-col">
+<div class="relative h-40 w-full overflow-hidden border-b border-[#453b26]">
+<div class="absolute top-2 right-2 z-10">
+<span class="px-2 py-1 rounded bg-[#10B981]/20 border border-[#10B981]/50 text-[#10B981] text-[10px] font-bold uppercase backdrop-blur-sm">
+                            Active
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Yellow excavator on construction site" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBzYlM5IUX5amG4f6wb8mxgeiuRpMJ4YwD07cjTHxAV7VIyzCkHKuKoY7PIk7oqh9jngUobBz1wR6D4TR0z_mxl04q0uveAnHKXmqOctdyTh7VtN2PaYoePcKpTCuBUMBImZtVRKbWz7AR6SSX4mkOvyJlxxicndqhCV6rYSs_aRr76Vy6ayseerm3tahO2fp6WAJ5jp58Jd-Wwj56YpUt4BbVcXj89ciw7vsnUWqiB7_OEdcnWPE2GgvfGfDWMtiaFO9tdq0M5Tg");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">EX-CAT-01</h4>
+<p class="text-[#6b5d3a] text-xs font-mono mt-0.5">ID: 88392-AX</p>
+</div>
+<button class="text-[#6b5d3a] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 my-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+                                Sector 7G
+                            </div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Operator</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs">
+<span class="material-symbols-outlined text-[14px]">person</span>
+                                M. Dyson
+                            </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<div class="flex items-center justify-between text-[10px] text-[#c5b696] uppercase font-bold mb-1">
+<span>Fuel Level</span>
+<span>78%</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 78%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Maintenance -->
+<div class="group relative bg-[#2a2417] rugged-border rounded hover:border-primary/50 transition-colors overflow-hidden flex flex-col">
+<div class="relative h-40 w-full overflow-hidden border-b border-[#453b26]">
+<div class="absolute top-2 right-2 z-10">
+<span class="px-2 py-1 rounded bg-primary/20 border border-primary/50 text-primary text-[10px] font-bold uppercase backdrop-blur-sm">
+                            Maintenance
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500 grayscale opacity-80" data-alt="Construction dump truck" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCaEgFhQq-a7lnbQa1LtGrILrhSNfRtLSqg3Ffpt1krfkEfaE1rj4hH9GRVjpptszf66uarjo6BCiPsr311Txd4wy82UvhgI4tTFaeDLs7W5_wf9sTFIZQgmaIbEg0Ha3H_9pShALwa1PSwCfwLUCsZhtsmWzv4kPIwDHmRONRSkNqgUeqFO5kjeVppTNSJbjqz83qMZ9xNh1EJWCGdr6FePPMitIIQaO61XpI1odrdHjRJQqyNUPcgdEtxHdm2UOEVXrGxkAtEIA");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">DUMP-TRK-09</h4>
+<p class="text-[#6b5d3a] text-xs font-mono mt-0.5">ID: 11204-DT</p>
+</div>
+<button class="text-[#6b5d3a] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 my-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">build</span>
+                                Workshop B
+                            </div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">ETA</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                 4h 30m
+                             </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<div class="flex items-center justify-between text-[10px] text-[#c5b696] uppercase font-bold mb-1">
+<span>Service Progress</span>
+<span>45%</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full overflow-hidden">
+<div class="bg-yellow-600 h-full striped-bar" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Critical -->
+<div class="group relative bg-[#2a2417] border border-red-900/60 rounded hover:border-red-500 transition-colors overflow-hidden flex flex-col shadow-[0_0_15px_rgba(220,38,38,0.1)]">
+<div class="relative h-40 w-full overflow-hidden border-b border-red-900/30">
+<div class="absolute top-0 inset-x-0 h-1 bg-red-500 z-20 animate-pulse"></div>
+<div class="absolute top-3 right-2 z-10">
+<span class="px-2 py-1 rounded bg-red-500 text-white text-[10px] font-bold uppercase shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">warning</span> Critical
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500 sepia-[.5] hue-rotate-[-50deg]" data-alt="Industrial bulldozer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBhM3tQvGFeg85GjfxMFowlO-tolf8eTBfoh82zv9_CX8GxPooTL1h695n0_sidRw7XcOonti4MlpQS2rqE73FSIVLQ8hUnIYDozhAJE36FQTl5tBfKNPqYZR420c5hcOpWLW2xZltebGFMgT7I03D2NbUsYJI7xfAT20BFx5Bmvao7USMsWoUYUXvnjjpWS0dLuODOM1bRc3U45bTeQbaoVsziXYgXtdr-wZFH8BXZ59v4h5So6ly4UbJTK_SaYxZXzOdBEXw7Vw");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-red-400 transition-colors">DOZER-D9</h4>
+<p class="text-red-300/70 text-xs font-mono mt-0.5">ID: 99402-DZ</p>
+</div>
+<button class="text-red-400 hover:text-red-200 transition-colors">
+<span class="material-symbols-outlined text-[20px]">error</span>
+</button>
+</div>
+<div class="bg-red-900/20 border border-red-900/30 p-2 rounded mb-3">
+<p class="text-red-200 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">thermostat</span> Engine Overheat
+                         </p>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+                                Sector 7G
+                            </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<button class="w-full py-1.5 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase transition-colors">
+                            Request Service
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 4: Active -->
+<div class="group relative bg-[#2a2417] rugged-border rounded hover:border-primary/50 transition-colors overflow-hidden flex flex-col">
+<div class="relative h-40 w-full overflow-hidden border-b border-[#453b26]">
+<div class="absolute top-2 right-2 z-10">
+<span class="px-2 py-1 rounded bg-[#10B981]/20 border border-[#10B981]/50 text-[#10B981] text-[10px] font-bold uppercase backdrop-blur-sm">
+                            Active
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Large crane" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAyuwl4wp5NrR4f_gcq5zIKbrXuJFeHsyBBJUYX_Op1dDBUJTVOVv7722ZWDpEGJ_k-gEW0WttIL8_3abgF1o9HgtWq4flIs4VPxpFKzwKSHYwSK2BADUbkoZnG5Cg-pmi3znJipurJf1g1ElNJ1rWjnvpjq_uMM_hAovzpoNJw9Z0aNgytKWADnA24iHxwHAQQcPGOzN3k8PEFF763SWZJyg7vUQtR4fPDnK2WSggGVxio1V4lVKCtzVQB4oWX9UBXAr7DhLtycw");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">CRANE-X1</h4>
+<p class="text-[#6b5d3a] text-xs font-mono mt-0.5">ID: 33201-CR</p>
+</div>
+<button class="text-[#6b5d3a] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 my-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+                                Site A
+                            </div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Operator</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs">
+<span class="material-symbols-outlined text-[14px]">person</span>
+                                S. O'Neal
+                            </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<div class="flex items-center justify-between text-[10px] text-[#c5b696] uppercase font-bold mb-1">
+<span>Battery</span>
+<span>92%</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#10B981] h-full" style="width: 92%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5: Idle -->
+<div class="group relative bg-[#2a2417] rugged-border rounded hover:border-primary/50 transition-colors overflow-hidden flex flex-col">
+<div class="relative h-40 w-full overflow-hidden border-b border-[#453b26]">
+<div class="absolute top-2 right-2 z-10">
+<span class="px-2 py-1 rounded bg-gray-500/20 border border-gray-500/50 text-gray-400 text-[10px] font-bold uppercase backdrop-blur-sm">
+                            Idle
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Forklift in warehouse" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD-_klSH126auv7yWnYXm7hE0uleynAVNekUabfRULPYrgXaTRmWHxRH7DqPFjCq325GqWovV2gkJme159JNq5fJkgJTua4ogp1avjSJABeyEevh4SNn7NHiAqX3tuxHhJuTWLAZGnOlLQFBn8Cgz_0LFaNUJsu_d11SEhkBt3KRU6DVSpeAKyTGjBb9OkQyIGd6i4Zc1mAxM-0ZKhfJbVgtyDdF_ybhvFBTN9WCoVHhqvt91why_iIBleK--AAONh03bK5r5dJsw");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">LIFT-04</h4>
+<p class="text-[#6b5d3a] text-xs font-mono mt-0.5">ID: 55102-LF</p>
+</div>
+<button class="text-[#6b5d3a] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 my-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+                                Warehouse 2
+                            </div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Status</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                Since 2h
+                            </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<div class="flex items-center justify-between text-[10px] text-[#c5b696] uppercase font-bold mb-1">
+<span>Battery</span>
+<span>15%</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full overflow-hidden">
+<div class="bg-red-500 h-full" style="width: 15%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 6: Active -->
+<div class="group relative bg-[#2a2417] rugged-border rounded hover:border-primary/50 transition-colors overflow-hidden flex flex-col">
+<div class="relative h-40 w-full overflow-hidden border-b border-[#453b26]">
+<div class="absolute top-2 right-2 z-10">
+<span class="px-2 py-1 rounded bg-[#10B981]/20 border border-[#10B981]/50 text-[#10B981] text-[10px] font-bold uppercase backdrop-blur-sm">
+                            Active
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#2a2417] to-transparent z-10"></div>
+<div class="h-full w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Cement mixer truck" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCUKm43JiDi-aKeKoGnFoeafAz5OMiYvJCZZP1-jpM1i4oJIOt4gymxcL2o2xMfypX8xOFVmpxBD4gMVMy80Z8RXSXWoi3JyL8gcmoQHlhxt1mFPIWfREBNYbdo15T25EXVP1_x_B33vvnlpOpzMFz6m8QxFPRjF6_D7nbqZOOvpWyF8yCEGqpUdxDAn7H5ObgE0xWlN9s_9fgumnwgewxoXvUBSjK9-d6wflBi7t9CmygnjXjDYV-2KCl3m5cjS3zbqcsNyD9VDg");'></div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">MIXER-02</h4>
+<p class="text-[#6b5d3a] text-xs font-mono mt-0.5">ID: 66291-MX</p>
+</div>
+<button class="text-[#6b5d3a] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 my-3">
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Location</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs font-mono">
+<span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                                En Route
+                            </div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[#6b5d3a] text-[10px] uppercase font-bold">Operator</span>
+<div class="flex items-center gap-1 text-[#c5b696] text-xs">
+<span class="material-symbols-outlined text-[14px]">person</span>
+                                R. Sanchez
+                            </div>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-[#38301f]">
+<div class="flex items-center justify-between text-[10px] text-[#c5b696] uppercase font-bold mb-1">
+<span>Fuel Level</span>
+<span>60%</span>
+</div>
+<div class="w-full bg-[#38301f] h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 60%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-[#201c12] shadow-[0_0_20px_rgba(211,155,34,0.4)] hover:bg-[#e0a82e] hover:scale-105 transition-all focus:outline-none focus:ring-4 focus:ring-primary/40">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+</div>
+</body></html>

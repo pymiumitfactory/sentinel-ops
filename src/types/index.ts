@@ -18,6 +18,8 @@ export interface Asset {
     status: AssetStatus;
     lastServiceDate: string;
     location?: string;
+    operator?: string;
+    image?: string;
 }
 
 export interface MaintenanceLog {

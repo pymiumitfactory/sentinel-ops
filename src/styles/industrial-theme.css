@@ -1,21 +1,55 @@
 :root {
-    --bg-primary: #0d1117;
-    /* GitHub Dark Dimmed Background */
-    --bg-card: #161b22;
-    /* Slightly lighter card background */
-    --text-primary: #c9d1d9;
-    --text-secondary: #8b949e;
-    --accent-color: #58a6ff;
-    /* GitHub Blue */
-    --safety-yellow: #d29922;
-    /* Industrial Warning Yellow */
-    --safety-orange: #db6d28;
-    /* High Visibility Orange */
-    --status-ok: #2ea043;
-    /* Green */
-    --status-down: #da3633;
-    /* Red */
-    --border-color: #30363d;
+    /* FleetOps Palette */
+    --bg-primary: #201c12;
+
+    /* Responsive Utilities */
+    .hidden-on-mobile {
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .hidden-on-mobile {
+            display: block;
+        }
+    }
+
+    /* background-dark */
+    --bg-card: #2a2417;
+    /* card surface */
+    --bg-header: #211c12;
+    /* header bg */
+    --bg-input: #1a160e;
+    /* input bg */
+
+    --text-primary: #ffffff;
+    --text-secondary: #c5b696;
+    /* beige-muted */
+    --text-muted: #6b5d3a;
+    /* dark-muted */
+
+    --safety-yellow: #d39b22;
+    /* primary */
+    --safety-yellow-hover: #e0a82e;
+
+    --status-ok: #10B981;
+    /* emerald-500 */
+    --status-down: #ef4444;
+    /* red-500 */
+    --status-down-bg: rgba(127, 29, 29, 0.2);
+    /* red-900/20 */
+
+    --border-color: #453b26;
+    /* rugged-border */
+
+    --font-main: 'Inter',
+    system-ui,
+    sans-serif;
+    --font-mono: ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
 }
 
 body {
@@ -569,4 +603,272 @@ select:focus {
     border: 2px dashed var(--border-color);
     border-radius: 12px;
     text-align: center;
+}
+
+/* --- Dashboard Specifics --- */
+
+/* Donut Chart (Pure CSS) */
+.donut-chart-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.donut-chart {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    /* Gradient handles segments. Dynamic values set via inline style */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.donut-hole {
+    width: 80%;
+    height: 80%;
+    background: var(--bg-card);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Asset Grid Layout */
+.asset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    padding-bottom: 5rem;
+    /* Space for FAB */
+}
+
+.asset-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+    border-color: var(--text-secondary);
+}
+
+.asset-thumbnail {
+    width: 100%;
+    height: 140px;
+    background: #21262d;
+    /* Placeholder dark gray */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 3rem;
+    position: relative;
+}
+
+.asset-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.asset-status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.asset-info {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.asset-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.asset-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Tab Navigation (Stitch Style) */
+.tab-nav {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.8rem 0;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--safety-yellow);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--safety-yellow);
+}
+
+/* --- New Icon Buttons --- */
+.icon-btn-square {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2a2417;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    /* Slightly rounded squares */
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.icon-btn-square:hover {
+    background: #38301f;
+    border-color: var(--text-secondary);
+}
+
+/* --- Notification Dot --- */
+.notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: var(--status-down);
+    border: 1px solid var(--bg-card);
+    border-radius: 50%;
+}
+
+/* --- Filter Pills --- */
+.filter-pill {
+    padding: 0.4rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.filter-pill:hover {
+    background: #38301f;
+    color: var(--text-primary);
+}
+
+.filter-pill.active {
+    background: rgba(211, 155, 34, 0.2);
+    color: var(--safety-yellow);
+    border-color: rgba(211, 155, 34, 0.5);
+}
+
+/* --- Action Buttons --- */
+.btn-primary {
+    background: var(--safety-yellow);
+    color: #201c12;
+    /* Dark text on yellow */
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(211, 155, 34, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--safety-yellow-hover);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+/* --- Glass Status Badge --- */
+.status-badge-glass {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-badge-glass.status-active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.status-badge-glass.status-maintenance {
+    background: rgba(211, 155, 34, 0.2);
+    color: var(--safety-yellow);
+    border-color: rgba(211, 155, 34, 0.4);
+}
+
+.status-badge-glass.status-offline {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+    border-color: rgba(107, 114, 128, 0.4);
 }
