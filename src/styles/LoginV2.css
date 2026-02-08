@@ -1,0 +1,255 @@
+/* LoginV2.css - Industrial Theme Adaptation */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0&display=swap');
+
+:root {
+    --login-bg: #0d1117;
+    --login-surface: #161b22;
+    --login-border: #30363d;
+    --login-primary: #d39b22;
+    --login-primary-hover: #e6ad33;
+    --login-text: #e2e8f0;
+    --login-text-muted: #64748b;
+}
+
+.login-body {
+    background-color: var(--login-bg);
+    color: var(--login-text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(to right, #30363d1a 1px, transparent 1px),
+        linear-gradient(to bottom, #30363d1a 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.login-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, #0d1117 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.login-container {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    width: 100%;
+}
+
+.login-card-wrapper {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sentinel-glow {
+    filter: drop-shadow(0 0 15px rgba(211, 155, 34, 0.3));
+    color: var(--login-primary);
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    margin: 0;
+    color: white;
+}
+
+.login-subtitle {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.75rem;
+    color: var(--login-text-muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--login-border);
+    padding-bottom: 0.25rem;
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+.login-form-card {
+    background-color: rgba(22, 27, 34, 0.9);
+    border: 1px solid var(--login-border);
+    border-radius: 4px;
+    padding: 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+}
+
+.login-label {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--login-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--login-text-muted);
+    pointer-events: none;
+    font-family: 'Material Symbols Outlined';
+    font-size: 1.25rem;
+}
+
+.industrial-input {
+    width: 100%;
+    background-color: #010409;
+    border: 1px solid var(--login-border);
+    color: white;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.875rem;
+    border-radius: 2px;
+    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    transition: all 0.2s;
+}
+
+.industrial-input:focus {
+    outline: none;
+    border-color: var(--login-primary);
+    box-shadow: 0 0 0 1px var(--login-primary), 0 0 0 3px rgba(211, 155, 34, 0.1);
+}
+
+.login-btn {
+    width: 100%;
+    background-color: var(--login-primary);
+    color: #0d1117;
+    border: none;
+    padding: 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    cursor: pointer;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-btn:hover {
+    background-color: var(--login-primary-hover);
+    box-shadow: 0 10px 15px -3px rgba(211, 155, 34, 0.2);
+}
+
+.login-btn:active {
+    transform: translateY(1px);
+}
+
+.status-badge {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background-color: rgba(22, 27, 34, 0.5);
+    border: 1px solid var(--login-border);
+    border-radius: 9999px;
+    backdrop-filter: blur(8px);
+}
+
+.ping-dot {
+    position: relative;
+    display: flex;
+    height: 10px;
+    width: 10px;
+}
+
+.ping-animate {
+    position: absolute;
+    display: inline-flex;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    background-color: #34d399;
+    opacity: 0.75;
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.ping-static {
+    position: relative;
+    display: inline-flex;
+    border-radius: 50%;
+    height: 10px;
+    width: 10px;
+    background-color: #10b981;
+}
+
+@keyframes ping {
+
+    75%,
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Material Symbols Font Setup */
+.material-icon {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+}
+
+.scanlines {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0) 50%,
+            rgba(0, 0, 0, 0.1) 50%,
+            rgba(0, 0, 0, 0.1));
+    background-size: 100% 4px;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.2;
+}

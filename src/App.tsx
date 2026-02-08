@@ -9,7 +9,7 @@ import { QRScanner } from './components/QRScanner';
 import {
     PlusIcon, AlertTriangleIcon, BellIcon, MapPinIcon as LocationIcon, ScanIcon
 } from './components/Icons';
-import { Login } from './components/Login';
+import { LoginV2 as Login } from './components/LoginV2'; // NEW INDUSTRIAL DESIGN
 import { TeamManager } from './components/TeamManager';
 import { DashboardStats } from './components/DashboardStats';
 import { FleetMap } from './components/FleetMap';
