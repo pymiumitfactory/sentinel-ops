@@ -66,64 +66,86 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onClose, onSave, on
                 </div>
 
                 {!showDeleteConfirm ? (
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <div style={{ borderBottom: '1px solid #2a2417', paddingBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Asset Identity</label>
+                            <input
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                                placeholder="e.g. CAT EXCAVATOR 320"
+                                style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white', fontWeight: 600 }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', borderBottom: '1px solid #2a2417', paddingBottom: '1.25rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unit ID</label>
+                                <input name="internalId" value={formData.internalId} onChange={handleChange} required placeholder="EXC-001" style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white', fontFamily: 'var(--font-mono)' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Location</label>
+                                <input name="location" value={formData.location} onChange={handleChange} required placeholder="Sector 7G" style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white' }} />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', borderBottom: '1px solid #2a2417', paddingBottom: '1.25rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brand</label>
+                                <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Caterpillar" style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Model</label>
+                                <input name="model" value={formData.model} onChange={handleChange} placeholder="320 GC" style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white' }} />
+                            </div>
+                        </div>
+
                         <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Nombre del Equipo</label>
-                            <input name="name" value={formData.name} onChange={handleChange} required placeholder="Ej: Excavadora 320" />
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>ID Interno</label>
-                                <input name="internalId" value={formData.internalId} onChange={handleChange} required placeholder="Ej: MIN-EXC-01" />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Ubicación Actual</label>
-                                <input name="location" value={formData.location} onChange={handleChange} required placeholder="Ej: Tajo Norte" />
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Marca</label>
-                                <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Caterpillar" />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Modelo</label>
-                                <input name="model" value={formData.model} onChange={handleChange} placeholder="320 GC" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Categoría</label>
-                            <select name="category" value={formData.category} onChange={handleChange}>
-                                <option value="heavy_machinery">Maquinaria Pesada</option>
-                                <option value="light_vehicle">Vehículo Liviano</option>
-                                <option value="plant_equipment">Equipo de Planta</option>
-                                <option value="tool">Herramienta</option>
+                            <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Classification</label>
+                            <select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleChange}
+                                style={{ width: '100%', background: '#0d1117', border: '1px solid #453b26', borderRadius: '4px', padding: '0.8rem', color: 'white', cursor: 'pointer', appearance: 'none' }}
+                            >
+                                <option value="heavy_machinery">Heavy Machinery</option>
+                                <option value="light_vehicle">Light Vehicle</option>
+                                <option value="transport">Transport / Logistics</option>
+                                <option value="utility">Utility / Plant</option>
                             </select>
                         </div>
 
-                        {/* QR Code Placeholder / Info */}
                         {isEdit && (
-                            <div style={{ background: '#0D1117', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem', border: '1px dashed var(--border-color)', textAlign: 'center' }}>
-                                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID de Sistema (Para QR):</p>
-                                <code style={{ color: 'var(--safety-yellow)', fontSize: '1rem' }}>{asset.id}</code>
+                            <div style={{ background: 'rgba(211, 155, 34, 0.05)', padding: '1rem', borderRadius: '4px', border: '1px dashed #d29922', textAlign: 'center' }}>
+                                <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#d29922', textTransform: 'uppercase' }}>System Tracking ID (QR Source):</p>
+                                <code style={{ color: 'white', fontSize: '0.9rem', display: 'block', marginTop: '4px' }}>{asset.id}</code>
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                            <button type="submit" style={{ flex: 1 }} disabled={loading}>
-                                {loading ? 'Guardando...' : (isEdit ? 'Actualizar Activo' : 'Crear Activo')}
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    flex: 2, background: 'var(--safety-yellow)', color: '#201c12', border: 'none',
+                                    padding: '1rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.9rem',
+                                    textTransform: 'uppercase', cursor: 'pointer', boxShadow: '0 0 10px rgba(211, 155, 34, 0.2)'
+                                }}
+                            >
+                                {loading ? 'Processing...' : (isEdit ? 'Update Asset' : 'Commission Asset')}
                             </button>
 
                             {isEdit && (
                                 <button
                                     type="button"
                                     onClick={() => setShowDeleteConfirm(true)}
-                                    style={{ background: 'transparent', border: '1px solid var(--status-down)', color: 'var(--status-down)' }}
+                                    style={{
+                                        flex: 1, background: 'transparent', border: '1px solid #dc2626', color: '#dc2626',
+                                        fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', cursor: 'pointer'
+                                    }}
                                 >
-                                    Eliminar
+                                    Decommission
                                 </button>
                             )}
                         </div>

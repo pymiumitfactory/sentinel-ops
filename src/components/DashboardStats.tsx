@@ -23,7 +23,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ assets, alerts }
     }, [assets, alerts]);
 
     return (
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
 
             {/* Card 1: Fleet Health (Donut) */}
             <div className="card" style={{

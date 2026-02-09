@@ -7,12 +7,12 @@ import { NotificationCenter } from './components/NotificationCenter';
 import { AssetDrawer } from './components/AssetDrawer';
 import { QRScanner } from './components/QRScanner';
 import {
-    PlusIcon, BellIcon, MapPinIcon as LocationIcon, ScanIcon, SettingsIcon
+    PlusIcon
 } from './components/Icons';
 import { LoginV2 as Login } from './components/LoginV2';
 import { TeamManager } from './components/TeamManager';
 import { DashboardStats } from './components/DashboardStats';
-import { FleetMap } from './components/FleetMap';
+
 import './styles/main.css';
 import './styles/responsive.css';
 import './styles/animations.css';
@@ -106,8 +106,7 @@ const App: React.FC = () => {
                     console.error(e);
                 }
             }
-            const count = await api.getPendingLogsCount();
-            setPendingCount(count);
+            // count previously used for pending UI
         } finally {
             isSyncing.current = false;
         }
@@ -202,65 +201,67 @@ const App: React.FC = () => {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}>
-                <div className="flex items-center gap-4">
-                    <div style={{ color: 'var(--safety-yellow)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 'fit-content' }}>
+                    <div style={{ color: 'var(--safety-yellow)', display: 'flex', alignItems: 'center' }}>
                         <span className="material-icon" style={{ fontSize: '32px' }}>local_shipping</span>
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, color: 'white', fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
+                        <h2 style={{ margin: 0, color: 'white', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, textTransform: 'uppercase' }}>
                             FLEET<span style={{ color: 'var(--safety-yellow)' }}>OPS</span>
                         </h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px' }}>
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'} opacity-75`}></span>
-                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                            </span>
-                            <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', color: '#c5b696' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span className="animate-ping" style={{ position: 'absolute', height: '10px', width: '10px', borderRadius: '50%', background: isOnline ? '#4ade80' : '#f87171', opacity: 0.75 }}></span>
+                                <span style={{ position: 'relative', height: '8px', width: '8px', borderRadius: '50%', background: isOnline ? '#22c55e' : '#ef4444', boxShadow: isOnline ? '0 0 8px #22c55e' : '0 0 8px #ef4444' }}></span>
+                            </div>
+                            <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', fontWeight: 600, textTransform: 'uppercase', color: '#c5b696', letterSpacing: '0.05em' }}>
                                 {isOnline ? 'System Online' : 'Offline Mode'}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Search & Actions */}
-                <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-end', gap: '1.5rem', alignItems: 'center' }}>
-                    <div className="hidden-on-mobile" style={{ position: 'relative', width: '16rem' }}>
+                {/* Search (Centered if possible) & Actions */}
+                <div style={{ display: 'flex', flex: 1, justifyContent: 'center', padding: '0 2rem' }}>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '24rem' }}>
                         <input
                             type="text"
-                            placeholder="Search Asset ID..."
+                            placeholder="SEARCH UNIT ID..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{
-                                width: '100%', background: '#1a160e', border: '1px solid #453b26',
-                                borderRadius: '4px', padding: '0.5rem 0.75rem 0.5rem 2.25rem', color: 'white', fontSize: '0.875rem',
-                                outline: 'none'
+                                width: '100%', background: '#13110d', border: '1px solid #453b26',
+                                borderRadius: '4px', padding: '0.6rem 0.75rem 0.6rem 2.5rem', color: 'white', fontSize: '0.8rem',
+                                outline: 'none', fontWeight: 600, letterSpacing: '0.025em'
                             }}
                         />
-                        <span className="material-icon" style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: '#6b5d3a' }}>search</span>
+                        <span className="material-icon" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: '#6b5d3a' }}>search</span>
                     </div>
+                </div>
 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 'fit-content' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => setIsScannerOpen(true)} className="icon-btn-square" style={{ width: 40, height: 40, background: '#2a2417', border: '1px solid #453b26', borderRadius: '4px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span className="material-icon" style={{ fontSize: '20px' }}>wifi</span>
+                        <button onClick={() => setIsScannerOpen(true)} className="icon-btn-square" style={{ width: 44, height: 44, background: '#2a2417', border: '1px solid #453b26', borderRadius: '4px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                            <span className="material-icon" style={{ fontSize: '22px' }}>wifi</span>
                         </button>
-                        <button onClick={() => setIsNotificationOpen(true)} className="icon-btn-square relative" style={{ width: 40, height: 40, background: '#2a2417', border: '1px solid #453b26', borderRadius: '4px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span className="material-icon" style={{ fontSize: '20px' }}>notifications</span>
+                        <button onClick={() => setIsNotificationOpen(true)} className="icon-btn-square relative" style={{ width: 44, height: 44, background: '#2a2417', border: '1px solid #453b26', borderRadius: '4px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                            <span className="material-icon" style={{ fontSize: '22px' }}>notifications</span>
                             {alerts.filter(a => !a.isResolved).length > 0 && (
-                                <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#ef4444', borderRadius: '50%', border: '1px solid #2a2417' }}></span>
+                                <span style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, background: '#ef4444', borderRadius: '50%', border: '1.5px solid #2a2417' }}></span>
                             )}
                         </button>
                     </div>
 
                     <div
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingLeft: '1rem', borderLeft: '1px solid #453b26', cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingLeft: '1.25rem', borderLeft: '1px solid #453b26', cursor: 'pointer' }}
                         onClick={handleLogout}
                     >
                         <div className="hidden-on-mobile" style={{ textAlign: 'right' }}>
-                            <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>J. Connor</p>
-                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#c5b696' }}>Lead Dispatch</p>
+                            <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>J. Connor</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: '#c5b696', fontWeight: 600, textTransform: 'uppercase' }}>Lead Dispatch</p>
                         </div>
                         <div style={{
-                            width: 40, height: 40, borderRadius: '4px', border: '1px solid #453b26',
+                            width: 44, height: 44, borderRadius: '4px', border: '1.5px solid #453b26',
                             backgroundSize: 'cover', backgroundPosition: 'center',
                             backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCGxFESl-udutuPfdcRycTZdN6dCMxAJJLxl6y2WvtyIJbHQAXPP-SiuxJvU6ZvT1MV3V6uO1dw44jzRjfOhhWB94Tpg_qYgd87r0V9s9h9hxZG5sag5TuJ0LtlyXUivEXxg5JrV-D2iDe0HPCDZKk93BlWsPD1NR8-BUcHPXbjOtS99sVY9OyRUqX3M1CH76kWa4JHsn0c6gM76wvxNDrEbbh38Ik8RuXp96SdXbINPmyNZDVM1GtnieJJE3juDfxujh7rND-vHg")'
                         }}></div>

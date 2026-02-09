@@ -127,49 +127,81 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ asset, onClose, on
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {ITEMS.map(item => (
-                            <div key={item.id} className="checklist-item">
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{item.label}</label>
+                            <div key={item.id} className="checklist-item" style={{ borderBottom: '1px solid #2a2417', paddingBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 700, fontSize: '0.85rem', color: '#c5b696', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {item.label}
+                                </label>
 
-                                {item.type === 'boolean' && (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button
-                                            type="button"
-                                            className={`toggle-btn ${responses[item.id] === true ? 'active-ok' : ''}`}
-                                            onClick={() => handleChange(item.id, true)}
-                                        >OK</button>
-                                        <button
-                                            type="button"
-                                            className={`toggle-btn ${responses[item.id] === false ? 'active-ko' : ''}`}
-                                            onClick={() => handleChange(item.id, false)}
-                                        >Fallo</button>
+                                {item.type === 'boolean' || item.type === 'ok_fail' ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleChange(item.id, 'pass')}
+                                                style={{
+                                                    padding: '0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                                                    background: responses[item.id] === 'pass' ? '#059669' : '#161b22',
+                                                    color: responses[item.id] === 'pass' ? 'white' : '#8b949e',
+                                                    border: responses[item.id] === 'pass' ? 'none' : '1px solid #453b26',
+                                                    textTransform: 'uppercase'
+                                                }}
+                                            >PASS</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleChange(item.id, 'fail')}
+                                                style={{
+                                                    padding: '0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                                                    background: responses[item.id] === 'fail' ? '#dc2626' : '#161b22',
+                                                    color: responses[item.id] === 'fail' ? 'white' : '#8b949e',
+                                                    border: responses[item.id] === 'fail' ? 'none' : '1px solid #453b26',
+                                                    textTransform: 'uppercase'
+                                                }}
+                                            >FAIL</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleChange(item.id, 'na')}
+                                                style={{
+                                                    padding: '0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                                                    background: responses[item.id] === 'na' ? '#4b5563' : '#161b22',
+                                                    color: responses[item.id] === 'na' ? 'white' : '#8b949e',
+                                                    border: responses[item.id] === 'na' ? 'none' : '1px solid #453b26',
+                                                    textTransform: 'uppercase'
+                                                }}
+                                            >N/A</button>
+                                        </div>
+
+                                        {/* Auto-expand comment field on Fail */}
+                                        {responses[item.id] === 'fail' && (
+                                            <textarea
+                                                placeholder="Describe the issue..."
+                                                style={{
+                                                    width: '100%', background: '#0d1117', border: '1px solid #dc2626',
+                                                    borderRadius: '4px', padding: '0.75rem', color: 'white', fontSize: '0.85rem',
+                                                    minHeight: '80px', outline: 'none'
+                                                }}
+                                                onChange={(e) => handleChange(`${item.id}_comment`, e.target.value)}
+                                            />
+                                        )}
                                     </div>
-                                )}
-
-                                {item.type === 'ok_fail' && (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button
-                                            type="button"
-                                            className={`toggle-btn ${responses[item.id] === 'ok' ? 'active-ok' : ''}`}
-                                            onClick={() => handleChange(item.id, 'ok')}
-                                        >✓ Bien</button>
-                                        <button
-                                            type="button"
-                                            className={`toggle-btn ${responses[item.id] === 'fail' ? 'active-ko' : ''}`}
-                                            onClick={() => handleChange(item.id, 'fail')}
-                                        >⚠ Mal</button>
+                                ) : item.type === 'number' && (
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="number"
+                                            style={{
+                                                padding: '1rem', background: '#0d1117', border: '1px solid #453b26',
+                                                color: 'white', borderRadius: '4px', width: '100%', fontSize: '1.2rem', fontWeight: 700,
+                                                outline: 'none'
+                                            }}
+                                            onChange={(e) => handleChange(item.id, e.target.value)}
+                                            placeholder="0.0"
+                                            step="0.1"
+                                        />
+                                        <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#6b5d3a', fontWeight: 700 }}>
+                                            {item.id === 'fuel_level' ? '%' : 'HRS'}
+                                        </span>
                                     </div>
-                                )}
-
-                                {item.type === 'number' && (
-                                    <input
-                                        type="number"
-                                        style={{ padding: '0.8rem', background: '#0d1117', border: '1px solid var(--border-color)', color: 'white', borderRadius: '6px', width: '100%' }}
-                                        onChange={(e) => handleChange(item.id, e.target.value)}
-                                        placeholder="0.0"
-                                        step="0.1"
-                                    />
                                 )}
                             </div>
                         ))}
