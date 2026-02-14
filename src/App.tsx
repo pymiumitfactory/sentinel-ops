@@ -188,19 +188,21 @@ const App: React.FC = () => {
     return (
         <div className="app-container" style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
-            <AppHeader
-                isOnline={isOnline}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                alerts={alerts}
-                user={user}
-                onScannerClick={() => navigateTo('scanner')}
-                onNotificationClick={() => setIsNotificationOpen(true)}
-                toggleWebMCP={() => setShowWebMCP(!showWebMCP)}
-                showWebMCP={showWebMCP}
-                onLogout={handleLogout}
-                navigateTo={(page) => navigateTo(page as ViewState)}
-            />
+            {currentView !== 'scanner' && (
+                <AppHeader
+                    isOnline={isOnline}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    alerts={alerts}
+                    user={user}
+                    onScannerClick={() => navigateTo('scanner')}
+                    onNotificationClick={() => setIsNotificationOpen(true)}
+                    toggleWebMCP={() => setShowWebMCP(!showWebMCP)}
+                    showWebMCP={showWebMCP}
+                    onLogout={handleLogout}
+                    navigateTo={(page) => navigateTo(page as ViewState)}
+                />
+            )}
 
             <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 1.5rem 6rem' }}>
 
@@ -341,7 +343,10 @@ const App: React.FC = () => {
 
             <AssetDrawer
                 asset={drawerAsset}
-                onClose={() => setDrawerAsset(null)}
+                onClose={() => {
+                    setDrawerAsset(null);
+                    // If we were navigating via asset click from scanner, ensure consistent view state if needed.
+                }}
                 onRefreshRequest={fetchData}
                 onAssetUpdate={async (id: string, data: Partial<Asset>) => handleSaveAsset({ ...data, id })}
                 onAssetDelete={handleDeleteAsset}
@@ -355,10 +360,13 @@ const App: React.FC = () => {
             )}
 
             <WebMCPDemo
-                onNavigate={(page) => {
+                onNavigate={(page: ViewState, filter?: string) => {
                     const validPages: ViewState[] = ['dashboard', 'assets', 'scanner', 'settings', 'map'];
-                    if (validPages.includes(page as any)) {
-                        navigateTo(page as ViewState);
+                    if (validPages.includes(page)) {
+                        if (page === 'assets' && filter) {
+                            setFilter(filter);
+                        }
+                        navigateTo(page);
                     } else {
                         showToast(`Page '${page}' not found`, 'warning');
                     }

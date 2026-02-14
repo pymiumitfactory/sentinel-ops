@@ -22,7 +22,7 @@ interface ChatMessage {
 }
 
 interface WebMCPDemoProps {
-    onNavigate: (page: string) => void;
+    onNavigate: (page: string, filter?: string) => void;
     onSimulateAlert: (message: string, severity: 'low' | 'medium' | 'high' | 'critical') => void;
     onShowAsset: (assetId: string) => Promise<boolean>;
 }
@@ -143,14 +143,15 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
 
     const navTool = useWebMCP({
         name: 'navigate_to_page',
-        description: 'Navigates the user interface to a specific section of the application.',
+        description: 'Navigates the user interface to a specific section. Use "assets" page with a filter to show specific lists.',
         inputSchema: {
-            page: z.enum(['dashboard', 'assets', 'settings', 'map', 'scanner']).describe('The destination page identifier.')
+            page: z.enum(['dashboard', 'assets', 'settings', 'map', 'scanner']).describe('The destination page identifier.'),
+            filter: z.enum(['all', 'active', 'maintenance', 'critical']).optional().describe('Optional filter to apply when navigating to assets page.')
         },
         handler: async (args) => {
             addLog('tool_call', 'navigate_to_page called', args);
-            onNavigate(args.page);
-            return { success: true, current_page: args.page };
+            onNavigate(args.page, args.filter);
+            return { success: true, current_page: args.page, filter_applied: args.filter };
         }
     });
 
@@ -261,7 +262,7 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
                     { name: "get_system_status", description: "Get system status", parameters: { type: "OBJECT", properties: { detail_level: { type: "STRING", enum: ["summary", "full"] } }, required: ["detail_level"] } },
                     { name: "list_recent_assets", description: "List assets", parameters: { type: "OBJECT", properties: { limit: { type: "NUMBER" } } } },
                     { name: "simulate_alert", description: "Simulate alert", parameters: { type: "OBJECT", properties: { message: { type: "STRING" }, severity: { type: "STRING", enum: ["low", "medium", "high", "critical"] } }, required: ["message", "severity"] } },
-                    { name: "navigate_to_page", description: "Navigate", parameters: { type: "OBJECT", properties: { page: { type: "STRING", enum: ["dashboard", "assets", "settings", "map", "scanner"] } }, required: ["page"] } },
+                    { name: "navigate_to_page", description: "Navigate", parameters: { type: "OBJECT", properties: { page: { type: "STRING", enum: ["dashboard", "assets", "settings", "map", "scanner"] }, filter: { type: "STRING", enum: ["all", "active", "maintenance", "critical"] } }, required: ["page"] } },
                     { name: "create_maintenance_ticket", description: "Create ticket", parameters: { type: "OBJECT", properties: { asset_id: { type: "STRING" }, priority: { type: "STRING", enum: ["low", "normal", "urgent"] }, description: { type: "STRING" }, requires_shutdown: { type: "BOOLEAN" } }, required: ["asset_id", "priority", "description", "requires_shutdown"] } },
                     { name: "get_asset_details", description: "Get asset details", parameters: { type: "OBJECT", properties: { asset_id: { type: "STRING" } }, required: ["asset_id"] } }
                 ]
