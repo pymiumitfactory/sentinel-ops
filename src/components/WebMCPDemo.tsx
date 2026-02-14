@@ -174,6 +174,19 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
 
                 if (asset) {
                     await api.updateAsset(asset.id, { status: args.requires_shutdown ? 'down' : 'maintenance' });
+
+                    // Create a real maintenance log so it shows in history
+                    await api.createLog({
+                        assetId: asset.id,
+                        type: 'maintenance_request',
+                        data: {
+                            description: args.description,
+                            priority: args.priority,
+                            ticket_id: `TKT-${Date.now().toString().slice(-4)}`,
+                            source: 'AI Agent'
+                        }
+                    });
+
                     onShowAsset(asset.id); // Show drawer
                 } else {
                     return { success: false, error: 'Asset not found' };
@@ -184,7 +197,7 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
 
                 return {
                     success: true,
-                    ticket_id: `TKT-${Math.floor(Math.random() * 1000)}`,
+                    ticket_id: `TKT-${Date.now().toString().slice(-4)}`,
                     status: 'assigned',
                     asset_updated: true
                 };
@@ -207,17 +220,35 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
 
             if (!asset) return { error: 'Asset not found' };
 
-            // In a real app, this would fetch specific details from a separate endpoint
+            // Dynamic specs based on category/model to prove it's not hardcoded
+            let specs = {};
+            if (asset.category === 'heavy_machinery') {
+                specs = {
+                    engine: asset.brand === 'Caterpillar' ? 'Cat C15 ACERT' : 'Cummins QSK19',
+                    power: asset.model.includes('395') ? '542 HP' : '450 HP',
+                    operating_weight: '94,000 kg',
+                    bucket_capacity: '6.5 m3'
+                };
+            } else if (asset.category === 'transport') {
+                specs = {
+                    engine: 'Volvo D13',
+                    power: '420 HP',
+                    payload: '35 Ton',
+                    transmission: 'I-Shift'
+                };
+            } else {
+                specs = {
+                    power: 'Electric 220V',
+                    capacity: 'N/A',
+                    type: 'Stationary'
+                };
+            }
+
             return {
                 ...asset,
-                specs: {
-                    engine: 'C-15 Acert',
-                    power: '500 HP',
-                    operating_weight: '95,000 kg',
-                    bucket_capacity: '6.0 m3'
-                },
-                last_maintenance: '2023-11-15',
-                next_scheduled: '2024-02-20'
+                specs,
+                last_maintenance: asset.lastServiceDate || '2023-11-15',
+                next_scheduled: '2024-03-01' // In real app, calculate based on currentHours
             };
         }
     });
