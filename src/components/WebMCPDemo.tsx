@@ -193,15 +193,44 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
         }
     });
 
+    const detailsTool = useWebMCP({
+        name: 'get_asset_details',
+        description: 'Retrieves full technical details, status, and history for a specific asset.',
+        inputSchema: {
+            asset_id: z.string().describe('The ID or internal ID of the asset (e.g., MIN-EXC-001).')
+        },
+        handler: async (args) => {
+            addLog('tool_call', 'get_asset_details called', args);
+            const assets = await api.getAssets();
+            const asset = assets.find(a => a.internalId === args.asset_id || a.id === args.asset_id);
+
+            if (!asset) return { error: 'Asset not found' };
+
+            // In a real app, this would fetch specific details from a separate endpoint
+            return {
+                ...asset,
+                specs: {
+                    engine: 'C-15 Acert',
+                    power: '500 HP',
+                    operating_weight: '95,000 kg',
+                    bucket_capacity: '6.0 m3'
+                },
+                last_maintenance: '2023-11-15',
+                next_scheduled: '2024-02-20'
+            };
+        }
+    });
+
     useEffect(() => {
         toolRegistry.current = {
             get_system_status: statusTool,
             list_recent_assets: assetsTool,
             simulate_alert: alertTool,
             navigate_to_page: navTool,
-            create_maintenance_ticket: ticketTool
+            create_maintenance_ticket: ticketTool,
+            get_asset_details: detailsTool
         };
-    }, [statusTool, assetsTool, alertTool, navTool, ticketTool]);
+    }, [statusTool, assetsTool, alertTool, navTool, ticketTool, detailsTool]);
 
     // --- GEMINI HANDLER ---
 
@@ -232,8 +261,9 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
                     { name: "get_system_status", description: "Get system status", parameters: { type: "OBJECT", properties: { detail_level: { type: "STRING", enum: ["summary", "full"] } }, required: ["detail_level"] } },
                     { name: "list_recent_assets", description: "List assets", parameters: { type: "OBJECT", properties: { limit: { type: "NUMBER" } } } },
                     { name: "simulate_alert", description: "Simulate alert", parameters: { type: "OBJECT", properties: { message: { type: "STRING" }, severity: { type: "STRING", enum: ["low", "medium", "high", "critical"] } }, required: ["message", "severity"] } },
-                    { name: "navigate_to_page", description: "Navigate", parameters: { type: "OBJECT", properties: { page: { type: "STRING", enum: ["dashboard", "assets", "settings", "map"] } }, required: ["page"] } },
-                    { name: "create_maintenance_ticket", description: "Create ticket", parameters: { type: "OBJECT", properties: { asset_id: { type: "STRING" }, priority: { type: "STRING", enum: ["low", "normal", "urgent"] }, description: { type: "STRING" }, requires_shutdown: { type: "BOOLEAN" } }, required: ["asset_id", "priority", "description", "requires_shutdown"] } }
+                    { name: "navigate_to_page", description: "Navigate", parameters: { type: "OBJECT", properties: { page: { type: "STRING", enum: ["dashboard", "assets", "settings", "map", "scanner"] } }, required: ["page"] } },
+                    { name: "create_maintenance_ticket", description: "Create ticket", parameters: { type: "OBJECT", properties: { asset_id: { type: "STRING" }, priority: { type: "STRING", enum: ["low", "normal", "urgent"] }, description: { type: "STRING" }, requires_shutdown: { type: "BOOLEAN" } }, required: ["asset_id", "priority", "description", "requires_shutdown"] } },
+                    { name: "get_asset_details", description: "Get asset details", parameters: { type: "OBJECT", properties: { asset_id: { type: "STRING" } }, required: ["asset_id"] } }
                 ]
             }];
 
@@ -281,7 +311,7 @@ const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, on
             setChatHistory(prev => [...prev, {
                 id: crypto.randomUUID(),
                 role: 'agent',
-                content: `Error: ${e.message}. Check your API Key.`,
+                content: `Error: ${e.message}. Please try again later or check API key.`,
                 timestamp: new Date()
             }]);
         } finally {
