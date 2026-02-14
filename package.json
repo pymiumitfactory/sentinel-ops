@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@mcp-b/global": "^1.5.0",
+    "@mcp-b/react-webmcp": "^1.1.1",
     "@supabase/supabase-js": "^2.95.3",
     "@types/leaflet": "^1.9.21",
     "dexie": "^4.3.0",
@@ -17,7 +20,8 @@
     "leaflet": "^1.9.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
