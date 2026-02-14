@@ -430,7 +430,7 @@ const App: React.FC = () => {
                 </>
             </main>
             {/* FAB */}
-            <button
+            {/* <button
                 className="fab-button"
                 onClick={() => setIsCreatingAsset(true)}
                 style={{
@@ -443,7 +443,7 @@ const App: React.FC = () => {
                 }}
             >
                 <PlusIcon size={32} color="#000" />
-            </button>
+            </button> */}
 
             {/* -- Drawers & Modals -- */}
 
@@ -489,7 +489,35 @@ const App: React.FC = () => {
                 />
             )}
 
-            <WebMCPDemo />
+            <WebMCPDemo
+                onNavigate={(page) => {
+                    if (page === 'scanner') setIsScannerOpen(true);
+                    if (page === 'dashboard') { setIsScannerOpen(false); setIsNotificationOpen(false); setDrawerAsset(null); }
+                    if (page === 'assets') { setIsScannerOpen(false); setDrawerAsset(null); setFilter('all'); }
+                    if (page === 'settings') showToast('Navigating to settings...', 'info');
+                    if (page === 'map') showToast('Map view not initialized', 'warning');
+                }}
+                onSimulateAlert={(msg, severity) => {
+                    const newAlert: Alert = {
+                        id: crypto.randomUUID(),
+                        assetId: 'SYSTEM',
+                        severity: severity,
+                        description: msg,
+                        isResolved: false,
+                        createdAt: new Date().toISOString()
+                    };
+                    setAlerts(prev => [newAlert, ...prev]);
+                    showToast(`Alert Simulated: ${msg}`, 'error');
+                }}
+                onShowAsset={async (id) => {
+                    const found = assets.find(a => a.id === id || a.internalId === id);
+                    if (found) {
+                        setDrawerAsset(found);
+                        return true;
+                    }
+                    return false;
+                }}
+            />
         </div>
     );
 };

@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useWebMCP } from '@mcp-b/react-webmcp';
 import { z } from 'zod';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { api } from '../api/service';
+import type { Asset, Alert } from '../types';
 import '../styles/industrial-theme.css';
 
 interface LogEntry {
@@ -19,39 +21,40 @@ interface ChatMessage {
     timestamp: Date;
 }
 
-const WebMCPDemo: React.FC = () => {
-    // UI State
+interface WebMCPDemoProps {
+    onNavigate: (page: string) => void;
+    onSimulateAlert: (message: string, severity: 'low' | 'medium' | 'high' | 'critical') => void;
+    onShowAsset: (assetId: string) => Promise<boolean>;
+}
+
+const WebMCPDemo: React.FC<WebMCPDemoProps> = ({ onNavigate, onSimulateAlert, onShowAsset }) => {
+    // ... existing UI state ...
     const [isExpanded, setIsExpanded] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [activeView, setActiveView] = useState<'chat' | 'debug'>('chat');
 
-    // Logic State
+    // ... existing logic state ...
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [isAvailable, setIsAvailable] = useState(false);
 
-    // Chat State
+    // ... (keep Chat/Gemini/Ref states) ...
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [currentInput, setCurrentInput] = useState('');
-
-    // Gemini State
     const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Ref to access current tools in handlers (avoid stale closures)
     const toolRegistry = useRef<Record<string, any>>({});
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Persist API Key
+    // ... (keep useEffects for persistence/scroll/availability) ...
     useEffect(() => {
         if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
     }, [apiKey]);
 
-    // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [chatHistory, activeView, isExpanded]);
 
-    // Check for availability
     useEffect(() => {
         const check = () => {
             // @ts-ignore
@@ -78,17 +81,28 @@ const WebMCPDemo: React.FC = () => {
 
     const statusTool = useWebMCP({
         name: 'get_system_status',
-        description: 'Returns the current operational status of the SentinelOps platform.',
+        description: 'Returns the real-time operational status of the SentinelOps platform from the database.',
         inputSchema: {
             detail_level: z.enum(['summary', 'full']).describe('Level of detail for the status report.')
         },
         handler: async (args) => {
             addLog('tool_call', 'get_system_status called', args);
+            // Fetch real data
+            const [assets, alerts] = await Promise.all([
+                api.getAssets(),
+                api.getAlerts()
+            ]);
+
+            const activeCount = assets.filter(a => a.status === 'active').length;
+            const maintCount = assets.filter(a => a.status === 'maintenance').length;
+            const downCount = assets.filter(a => a.status === 'down').length;
+
             return {
-                status: 'operational',
-                active_alerts: 2,
-                sensors_online: 145,
-                uptime: '99.9%',
+                status: downCount > 0 ? 'critical' : (maintCount > 0 ? 'warning' : 'nominal'),
+                total_assets: assets.length,
+                fleet_health: `${Math.round((activeCount / assets.length) * 100)}%`,
+                breakdown: { active: activeCount, maintenance: maintCount, critical: downCount },
+                active_alerts: alerts.length,
                 timestamp: new Date().toISOString()
             };
         }
@@ -102,11 +116,14 @@ const WebMCPDemo: React.FC = () => {
         },
         handler: async (args) => {
             addLog('tool_call', 'list_recent_assets called', args);
-            return [
-                { id: 'A-101', name: 'Hydraulic Pump X5', status: 'maintenance' },
-                { id: 'A-102', name: 'Conveyor Belt Motor', status: 'active' },
-                { id: 'A-104', name: 'Cooling Tower Fan', status: 'warning' },
-            ].slice(0, args.limit || 5);
+            const assets = await api.getAssets();
+            // Sort by ID or creation if timestamps aren't perfect, for now just slice
+            return assets.slice(0, args.limit || 5).map(a => ({
+                id: a.internalId || a.id,
+                name: a.name,
+                status: a.status,
+                location: a.location
+            }));
         }
     });
 
@@ -119,6 +136,7 @@ const WebMCPDemo: React.FC = () => {
         },
         handler: async (args) => {
             addLog('tool_call', 'simulate_alert called', args);
+            onSimulateAlert(args.message, args.severity as any);
             return { success: true, alerted: args.message };
         }
     });
@@ -127,31 +145,51 @@ const WebMCPDemo: React.FC = () => {
         name: 'navigate_to_page',
         description: 'Navigates the user interface to a specific section of the application.',
         inputSchema: {
-            page: z.enum(['dashboard', 'assets', 'settings', 'map']).describe('The destination page identifier.')
+            page: z.enum(['dashboard', 'assets', 'settings', 'map', 'scanner']).describe('The destination page identifier.')
         },
         handler: async (args) => {
             addLog('tool_call', 'navigate_to_page called', args);
-            return { success: true, previous_page: 'agent-interface', current_page: args.page };
+            onNavigate(args.page);
+            return { success: true, current_page: args.page };
         }
     });
 
     const ticketTool = useWebMCP({
         name: 'create_maintenance_ticket',
-        description: 'Creates a new maintenance ticket for a specific asset.',
+        description: 'Creates a new maintenance ticket (simulated via Alert system) for a specific asset.',
         inputSchema: {
-            asset_id: z.string().describe('The ID of the asset requiring maintenance (e.g., A-101).'),
+            asset_id: z.string().describe('The ID of the asset requiring maintenance (e.g., MIN-EXC-001).'),
             priority: z.enum(['low', 'normal', 'urgent']).describe('Priority level of the maintenance.'),
             description: z.string().describe('Detailed description of the issue.'),
             requires_shutdown: z.boolean().describe('Whether the asset needs to be shut down for maintenance.')
         },
         handler: async (args) => {
             addLog('tool_call', 'create_maintenance_ticket called', args);
-            return {
-                success: true,
-                ticket_id: `TKT-${Math.floor(Math.random() * 1000)}`,
-                status: 'assigned',
-                estimated_completion: '24h'
-            };
+
+            // Try to set status to maintenance via API
+            try {
+                const assets = await api.getAssets();
+                const asset = assets.find(a => a.internalId === args.asset_id || a.id === args.asset_id);
+
+                if (asset) {
+                    await api.updateAsset(asset.id, { status: args.requires_shutdown ? 'down' : 'maintenance' });
+                    onShowAsset(asset.id); // Show drawer
+                } else {
+                    return { success: false, error: 'Asset not found' };
+                }
+
+                // Create alert notification
+                onSimulateAlert(`Ticket Created: ${args.description} for ${args.asset_id}`, 'medium');
+
+                return {
+                    success: true,
+                    ticket_id: `TKT-${Math.floor(Math.random() * 1000)}`,
+                    status: 'assigned',
+                    asset_updated: true
+                };
+            } catch (e: any) {
+                return { success: false, error: e.message };
+            }
         }
     });
 
@@ -394,6 +432,43 @@ const WebMCPDemo: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Quick Actions (Suggestions) */}
+                {activeView === 'chat' && !isProcessing && chatHistory.length === 0 && (
+                    <div style={{ padding: '0 1.5rem 1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {[
+                            { label: 'System Status', cmd: 'Get full system status report' },
+                            { label: 'Recent Assets', cmd: 'List real assets from database' },
+                            { label: 'Simulate Alert', cmd: 'Simulate a critical engine overheat alert' },
+                            { label: 'Open Scanner', cmd: 'Navigate to scanner' },
+                        ].map((action) => (
+                            <button
+                                key={action.label}
+                                onClick={() => setCurrentInput(action.cmd)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '20px',
+                                    padding: '0.4rem 0.8rem',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--safety-yellow)';
+                                    e.currentTarget.style.color = 'var(--safety-yellow)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }}
+                            >
+                                {action.label}
+                            </button>
+                        ))}
                     </div>
                 )}
 
